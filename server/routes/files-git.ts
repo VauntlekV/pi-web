@@ -5,12 +5,15 @@
 import { createReadStream } from "node:fs";
 import { Readable } from "node:stream";
 import type { Context, Hono } from "hono";
+import { SettingsManager } from "@earendil-works/pi-coding-agent";
 import type { AppDeps } from "../app.ts";
+import { generateCommitMessage } from "../commit-message.ts";
 import { openRawFile, readFileContent, readTree, resolveForGit, resolveWorkspace } from "../files.ts";
-import { gitCommit, gitDiff, gitLog, gitStage, gitStatus, gitUnstage } from "../git.ts";
+import { gitCommit, gitDiff, gitLog, gitPull, gitPush, gitStage, gitStatus, gitUnstage } from "../git.ts";
 import { HttpError, jsonBody } from "../http-error.ts";
+import { getGlobalRuntime } from "../settings/runtime-cache.ts";
 
-export function registerFilesGitRoutes(app: Hono, _deps: AppDeps): void {
+export function registerFilesGitRoutes(app: Hono, deps: AppDeps): void {
   // ------------------------------------------------------------------ files
 
   app.get("/api/files/tree", async (c) => c.json(await readTree(query(c, "cwd"), c.req.query("path") ?? "")));
@@ -42,7 +45,7 @@ export function registerFilesGitRoutes(app: Hono, _deps: AppDeps): void {
 
   app.get("/api/git/log", async (c) => {
     const cwd = await resolveWorkspace(query(c, "cwd"));
-    return c.json({ commits: await gitLog(cwd, c.req.query("limit")) });
+    return c.json({ commits: await gitLog(cwd, c.req.query("limit"), c.req.query("all") === "1") });
   });
 
   app.post("/api/git/stage", async (c) => {
@@ -64,6 +67,34 @@ export function registerFilesGitRoutes(app: Hono, _deps: AppDeps): void {
     }
     return c.json(await gitCommit(cwd, body.message));
   });
+
+  app.post("/api/git/pull", async (c) => c.json(await gitPull(await cwdBody(c))));
+
+  app.post("/api/git/push", async (c) => c.json(await gitPush(await cwdBody(c))));
+
+  app.post("/api/git/message", async (c) => {
+    const body = await jsonBody(c);
+    if (typeof body.cwd !== "string") throw new HttpError(400, "缺少 cwd");
+    const cwd = await resolveWorkspace(body.cwd);
+
+    // The conversation's own model; on the home page, the default one.
+    let runtime;
+    let model;
+    if (typeof body.sessionId === "string" && body.sessionId) {
+      const live = await deps.registry.get(body.sessionId);
+      runtime = live.session.modelRuntime;
+      model = live.session.model;
+    } else {
+      runtime = await getGlobalRuntime(deps);
+      const manager = deps.settingsManager ?? SettingsManager.create(deps.defaultCwd, deps.agentDir);
+      const provider = manager.getDefaultProvider();
+      const id = manager.getDefaultModel();
+      model = provider && id ? runtime.getModel(provider, id) : undefined;
+    }
+    if (!model) throw new HttpError(400, "没有可用的模型");
+
+    return c.json({ message: await generateCommitMessage(runtime, model, cwd, c.req.raw.signal) });
+  });
 }
 
 // ------------------------------------------------------------------ helpers
@@ -72,6 +103,12 @@ function query(c: Context, name: string): string {
   const value = c.req.query(name);
   if (value === undefined) throw new HttpError(400, `缺少 ${name}`);
   return value;
+}
+
+async function cwdBody(c: Context): Promise<string> {
+  const body = await jsonBody(c);
+  if (typeof body.cwd !== "string") throw new HttpError(400, "缺少 cwd");
+  return resolveWorkspace(body.cwd);
 }
 
 async function pathsBody(c: Context): Promise<{ cwd: string; paths: string[] }> {
