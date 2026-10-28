@@ -7,6 +7,9 @@ export type Route = { name: "home" } | { name: "plugins" } | { name: "session"; 
 
 const listeners = new Set<() => void>();
 
+/** Deploy prefix without the trailing slash: "" normally, "/pi-web" for the GitHub Pages demo. */
+const BASE = (import.meta.env?.BASE_URL ?? "/").replace(/\/+$/, "");
+
 function notify() {
   for (const listener of listeners) listener();
 }
@@ -30,7 +33,7 @@ export function parseRoute(pathname: string): Route {
 
 export function navigate(path: string): void {
   if (typeof window === "undefined") return;
-  window.history.pushState(null, "", path);
+  window.history.pushState(null, "", BASE + path);
   notify();
 }
 
@@ -42,7 +45,8 @@ function subscribe(listener: () => void): () => void {
 }
 
 function getPathname(): string {
-  return window.location.pathname;
+  const path = window.location.pathname;
+  return BASE && path.startsWith(BASE) ? path.slice(BASE.length) || "/" : path;
 }
 
 function getServerPathname(): string {

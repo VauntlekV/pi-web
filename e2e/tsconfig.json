@@ -1,0 +1,6 @@
+{
+  "extends": "../tsconfig.server.json",
+  "compilerOptions": { "noEmit": true, "rootDir": ".." },
+  "include": ["./**/*.ts", "../demo/**/*.ts", "../playwright.config.ts"],
+  "exclude": []
+}
