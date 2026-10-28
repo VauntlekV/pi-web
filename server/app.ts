@@ -311,7 +311,7 @@ export function toModelInfo(model: Model<string>): ModelInfo {
   };
 }
 
-function packageVersion(): string {
+export function packageVersion(): string {
   const here = dirname(fileURLToPath(import.meta.url));
   for (const candidate of ["../package.json", "../../../package.json"]) {
     try {

@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { serve } from "@hono/node-server";
 import { getAgentDir } from "@earendil-works/pi-coding-agent";
 import QRCode from "qrcode";
-import { createApp } from "./app.ts";
+import { createApp, packageVersion } from "./app.ts";
 import { resolveToken } from "./auth.ts";
 import { SessionRegistry } from "./registry.ts";
 
@@ -19,6 +19,16 @@ interface CliOptions {
   token?: string;
   noAuth: boolean;
 }
+
+const USAGE = `用法: pi-web [选项]
+
+  --host <addr>    监听地址（默认 0.0.0.0，环境变量 PI_WEB_HOST）
+  --port <n>       端口（默认 30142，环境变量 PI_WEB_PORT）
+  --cwd <dir>      新会话的默认工作区（默认当前目录）
+  --token <t>      访问令牌（默认首次生成并保存在 ~/.pi/agent/pi-web/token）
+  --no-auth        关闭认证（代理能执行命令，只在可信网络里这样做）
+  -h, --help       显示帮助
+  -v, --version    显示版本`;
 
 function parseArgs(argv: string[]): CliOptions {
   const values = new Map<string, string>();
@@ -102,14 +112,22 @@ async function printAddresses(host: string, port: number, token: string | undefi
 }
 
 async function main(): Promise<void> {
+  const argv = process.argv.slice(2);
+  if (argv.includes("--help") || argv.includes("-h")) {
+    console.log(USAGE);
+    return;
+  }
+  if (argv.includes("--version") || argv.includes("-v")) {
+    console.log(packageVersion());
+    return;
+  }
+
   let options: CliOptions;
   try {
-    options = parseArgs(process.argv.slice(2));
+    options = parseArgs(argv);
   } catch (error) {
     console.error(error instanceof Error ? error.message : error);
-    console.error(
-      "用法: tsx server/main.ts [--host 0.0.0.0] [--port 30142] [--cwd <dir>] [--token <t>] [--no-auth]",
-    );
+    console.error(USAGE);
     process.exit(1);
   }
 

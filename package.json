@@ -1,14 +1,44 @@
 {
-  "name": "pi-web",
+  "name": "@vauntlek/pi-web",
   "version": "0.1.0",
-  "private": true,
-  "description": "Web UI for the pi coding agent, embedding the pi SDK in-process (Claude Desktop style)",
+  "description": "Web UI for the pi coding agent: embeds the pi SDK in-process, Claude-style interface, LAN access with token auth",
+  "keywords": [
+    "pi",
+    "pi-agent",
+    "coding-agent",
+    "ai",
+    "agent",
+    "web-ui",
+    "llm",
+    "claude-style"
+  ],
+  "homepage": "https://github.com/VauntlekV/pi-web#readme",
+  "bugs": {
+    "url": "https://github.com/VauntlekV/pi-web/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/VauntlekV/pi-web.git"
+  },
+  "license": "MIT",
+  "author": "Vauntlek",
   "type": "module",
   "engines": {
     "node": ">=22.19.0"
   },
   "bin": {
     "pi-web": "bin/pi-web.js"
+  },
+  "files": [
+    "bin/",
+    "dist/",
+    "!dist/**/*.map",
+    "!dist/server/server/testing.js",
+    "!dist/server/server/settings/testing.js",
+    "docs/THIRD_PARTY_NOTICES.md"
+  ],
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "dev": "node scripts/dev.mjs",
@@ -19,22 +49,16 @@
     "build:server": "tsc -p tsconfig.server.json",
     "start": "node dist/server/server/main.js",
     "typecheck": "tsc -p tsconfig.server.json --noEmit && tsc -p web/tsconfig.json --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "prepublishOnly": "npm run typecheck && npm test && npm run build"
   },
   "dependencies": {
     "@earendil-works/pi-agent-core": "1.4.0",
     "@earendil-works/pi-ai": "1.4.0",
     "@earendil-works/pi-coding-agent": "1.4.0",
     "@hono/node-server": "2.1.5",
-    "highlight.js": "^11.12.0",
     "hono": "4.13.14",
-    "lucide-react": "^1.63.0",
-    "qrcode": "1.5.4",
-    "react": "^19.3.1",
-    "react-dom": "^19.3.1",
-    "react-markdown": "^10.1.0",
-    "rehype-highlight": "^7.0.2",
-    "remark-gfm": "^4.0.1"
+    "qrcode": "1.5.4"
   },
   "devDependencies": {
     "@types/node": "^26.6.5",
@@ -42,6 +66,13 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
+    "highlight.js": "^11.12.0",
+    "lucide-react": "^1.63.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "react-markdown": "^10.1.0",
+    "rehype-highlight": "^7.0.2",
+    "remark-gfm": "^4.0.1",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vite": "^8.3.5",

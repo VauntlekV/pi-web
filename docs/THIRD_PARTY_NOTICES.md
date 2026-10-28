@@ -31,3 +31,7 @@ SOFTWARE.
 ## transitions.dev
 
 The status line's colour wash (`--wash-layers` in `web/src/styles/motion.css`) is transitions.dev's "Pro gradient text" and the wording swap is its "Text states swap", both as carried by dsh-claude-style. Copyright (c) 2026 Jakub Antalik / Transitions.dev; used under the Transitions.dev License, which permits use and modification in products and forbids redistributing the transitions library itself. Full terms: <https://transitions.dev/terms.html>.
+
+## Fonts
+
+`web/public/fonts/InterVariable.woff2` (Inter, Copyright (c) 2016 The Inter Project Authors) and `web/public/fonts/NotoSerifVariable.woff2` (Noto Serif, Copyright 2022 The Noto Project Authors) are licensed under the SIL Open Font License 1.1; the full license texts ship beside them as `Inter-LICENSE.txt` and `NotoSerif-LICENSE.txt`.
