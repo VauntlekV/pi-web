@@ -47,10 +47,14 @@
     "build": "npm run build:web && npm run build:server",
     "build:web": "vite build",
     "build:server": "tsc -p tsconfig.server.json",
+    "build:demo": "vite build --mode demo --base /pi-web/ --outDir ../dist/pages --emptyOutDir && FAUX_TPS=120 tsx demo/record.ts dist/pages/demo-data.json && cp dist/pages/index.html dist/pages/404.html",
     "start": "node dist/server/server/main.js",
-    "typecheck": "tsc -p tsconfig.server.json --noEmit && tsc -p web/tsconfig.json --noEmit",
+    "typecheck": "tsc -p tsconfig.server.json --noEmit && tsc -p web/tsconfig.json --noEmit && tsc -p e2e/tsconfig.json",
     "test": "vitest run",
-    "prepublishOnly": "npm run typecheck && npm test && npm run build"
+    "prepublishOnly": "npm run typecheck && npm test && npm run build",
+    "test:e2e": "npm run build:web && playwright test",
+    "preversion": "node scripts/preversion.mjs && npm run typecheck",
+    "postversion": "git push --follow-tags"
   },
   "dependencies": {
     "@earendil-works/pi-agent-core": "1.4.0",
@@ -61,6 +65,7 @@
     "qrcode": "1.5.4"
   },
   "devDependencies": {
+    "@playwright/test": "1.64.1",
     "@types/node": "^26.6.5",
     "@types/qrcode": "1.5.6",
     "@types/react": "^19.3.0",

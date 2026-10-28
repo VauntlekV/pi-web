@@ -3,6 +3,8 @@ import { execFileSync } from "node:child_process";
 import { mkdir, realpath, unlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { GitCommit, GitDiffResponse, GitStatus } from "../shared/protocol.ts";
+import { cleanCommitMessage } from "./commit-message.ts";
+import { parseRefs } from "./git.ts";
 import { createHarness, type Harness } from "./testing.ts";
 
 let harness: Harness;
@@ -247,6 +249,93 @@ describe("git log", () => {
     expect((await log("abc")).commits).toHaveLength(3);
     expect((await log("999")).commits).toHaveLength(3);
     expect((await log()).commits).toHaveLength(3);
+  });
+
+  it("reports parents and refs, and with all=1 includes other branches", async () => {
+    const root = await gitRepo("log-graph");
+    await writeFile(join(root, "file.txt"), "base");
+    commitAll(root, "base");
+    git(root, ["checkout", "-q", "-b", "feature/x"]);
+    await writeFile(join(root, "feature.txt"), "f");
+    commitAll(root, "feature");
+    git(root, ["checkout", "-q", "main"]);
+    git(root, ["tag", "v1"]);
+    const cwd = await realpath(root);
+
+    const head = (await get<{ commits: GitCommit[] }>("/api/git/log", { cwd })).commits;
+    expect(head.map((commit) => commit.subject)).toEqual(["base"]);
+    expect(head[0].parents).toEqual([]);
+    expect(head[0].refs).toEqual([
+      { name: "main", kind: "head" },
+      { name: "v1", kind: "tag" },
+    ]);
+
+    const all = (await get<{ commits: GitCommit[] }>("/api/git/log", { cwd, all: "1" })).commits;
+    expect(all.map((commit) => commit.subject)).toEqual(["feature", "base"]);
+    expect(all[0].parents).toEqual([all[1].hash]);
+    expect(all[0].refs).toEqual([{ name: "feature/x", kind: "branch" }]);
+  });
+
+  it("parses decorations into typed refs", () => {
+    expect(parseRefs("HEAD -> refs/heads/main, refs/remotes/origin/main, refs/remotes/origin/HEAD, tag: refs/tags/v1")).toEqual([
+      { name: "main", kind: "head" },
+      { name: "origin/main", kind: "remote" },
+      { name: "v1", kind: "tag" },
+    ]);
+    expect(parseRefs("HEAD, refs/heads/a/b")).toEqual([
+      { name: "HEAD", kind: "head" },
+      { name: "a/b", kind: "branch" },
+    ]);
+  });
+});
+
+describe("git push and pull", () => {
+  it("publishes a new branch, then pulls a commit pushed from another clone", async () => {
+    const bare = join(harness.cwd, "sync-remote.git");
+    git(harness.cwd, ["init", "--bare", "-q", "-b", "main", bare]);
+    const root = await gitRepo("sync");
+    await writeFile(join(root, "a.txt"), "a");
+    commitAll(root, "first");
+    const cwd = await realpath(root);
+
+    expect(await (await post("/api/git/push", { cwd })).text()).toContain("没有配置远程仓库");
+    git(root, ["remote", "add", "origin", bare]);
+
+    const pushed = await postJson<GitStatus>("/api/git/push", { cwd });
+    expect(pushed.upstream).toBe("origin/main");
+    expect(pushed.ahead).toBe(0);
+
+    const clone = join(harness.cwd, "sync-clone");
+    git(harness.cwd, ["clone", "-q", bare, clone]);
+    await writeFile(join(clone, "b.txt"), "b");
+    git(clone, ["add", "-A"]);
+    git(clone, ["-c", "user.name=T", "-c", "user.email=t@example.com", "-c", "commit.gpgsign=false", "commit", "-qm", "remote"]);
+    git(clone, ["push", "-q", "origin", "main"]);
+
+    const pulled = await postJson<GitStatus>("/api/git/pull", { cwd });
+    expect(pulled.behind).toBe(0);
+    const log = await get<{ commits: GitCommit[] }>("/api/git/log", { cwd, limit: "1" });
+    expect(log.commits[0].subject).toBe("remote");
+
+    // Diverged: refuse instead of creating a merge commit.
+    await writeFile(join(clone, "c.txt"), "c");
+    git(clone, ["add", "-A"]);
+    git(clone, ["-c", "user.name=T", "-c", "user.email=t@example.com", "-c", "commit.gpgsign=false", "commit", "-qm", "remote 2"]);
+    git(clone, ["push", "-q", "origin", "main"]);
+    await writeFile(join(root, "d.txt"), "d");
+    commitAll(root, "local");
+    const diverged = await post("/api/git/pull", { cwd });
+    expect(diverged.status).toBe(400);
+    expect(await diverged.text()).toContain("已分叉");
+    expect(git(root, ["log", "-1", "--format=%s"]).trim()).toBe("local");
+  });
+});
+
+describe("commit message cleanup", () => {
+  it("strips code fences and wrapping quotes", () => {
+    expect(cleanCommitMessage("```\nfix: a\n\nbody\n```")).toBe("fix: a\n\nbody");
+    expect(cleanCommitMessage('"Add graph view"')).toBe("Add graph view");
+    expect(cleanCommitMessage("  subject\r\n\r\n\r\n\r\nbody  ")).toBe("subject\n\nbody");
   });
 });
 

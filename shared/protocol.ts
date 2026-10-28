@@ -396,10 +396,16 @@ export interface PromptRequest {
  *
  * GET  /api/git/status?cwd=                -> GitStatus
  * GET  /api/git/diff?cwd=&path=&staged=0|1 -> GitDiffResponse    (untracked files diff against /dev/null)
- * GET  /api/git/log?cwd=&limit=            -> { commits: GitCommit[] }   (limit default 30, max 200)
+ * GET  /api/git/log?cwd=&limit=&all=0|1    -> { commits: GitCommit[] }   (limit default 30, max 200;
+ *                                             all=1: every branch, remote and tag in topological order, for the graph)
  * POST /api/git/stage    { cwd, paths }    -> GitStatus
  * POST /api/git/unstage  { cwd, paths }    -> GitStatus
  * POST /api/git/commit   { cwd, message }  -> { commit: GitCommit; status: GitStatus }  (400 if nothing staged / empty message)
+ * POST /api/git/pull     { cwd }           -> GitStatus   (fast-forward only; 400 when diverged)
+ * POST /api/git/push     { cwd }           -> GitStatus   (sets the upstream on the first push of a branch)
+ * POST /api/git/message  { cwd, sessionId? } -> { message: string }
+ *      commit message for the staged diff (or all changes when nothing is staged), written by the
+ *      session's model (the default model without a session) with thinking off
  */
 
 export type FileEntryType = "file" | "dir" | "symlink";
@@ -483,6 +489,16 @@ export interface GitCommit {
   author: string;
   /** ISO 8601 */
   date: string;
+  /** parent hashes (empty for a root commit) */
+  parents?: string[];
+  /** branches, remote branches and tags pointing at this commit */
+  refs?: GitRef[];
+}
+
+export interface GitRef {
+  name: string;
+  /** "head": the checked-out branch (or "HEAD" when detached) */
+  kind: "head" | "branch" | "remote" | "tag";
 }
 
 // ================================================================ v2: settings, models, resources

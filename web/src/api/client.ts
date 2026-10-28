@@ -121,12 +121,16 @@ export const api = {
   gitStatus: (cwd: string) => request<GitStatus>("GET", `/api/git/status?cwd=${enc(cwd)}`),
   gitDiff: (cwd: string, path: string, staged: boolean) =>
     request<GitDiffResponse>("GET", `/api/git/diff?cwd=${enc(cwd)}&path=${enc(path)}&staged=${staged ? 1 : 0}`),
-  gitLog: (cwd: string, limit = 30) =>
-    request<{ commits: GitCommit[] }>("GET", `/api/git/log?cwd=${enc(cwd)}&limit=${limit}`),
+  gitLog: (cwd: string, limit = 30, all = false) =>
+    request<{ commits: GitCommit[] }>("GET", `/api/git/log?cwd=${enc(cwd)}&limit=${limit}${all ? "&all=1" : ""}`),
   gitStage: (cwd: string, paths: string[]) => request<GitStatus>("POST", "/api/git/stage", { cwd, paths }),
   gitUnstage: (cwd: string, paths: string[]) => request<GitStatus>("POST", "/api/git/unstage", { cwd, paths }),
   gitCommit: (cwd: string, message: string) =>
     request<{ commit: GitCommit; status: GitStatus }>("POST", "/api/git/commit", { cwd, message }),
+  gitPull: (cwd: string) => request<GitStatus>("POST", "/api/git/pull", { cwd }),
+  gitPush: (cwd: string) => request<GitStatus>("POST", "/api/git/push", { cwd }),
+  gitMessage: (cwd: string, sessionId: string | null) =>
+    request<{ message: string }>("POST", "/api/git/message", { cwd, ...(sessionId ? { sessionId } : {}) }),
 
   // settings
   settings: () => request<SettingsView>("GET", "/api/settings"),

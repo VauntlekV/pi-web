@@ -545,14 +545,24 @@ a.dock-icon-btn {
 .dock-git-head {
   display: flex;
   flex: none;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
-  height: 32px;
+  gap: 4px 6px;
+  min-height: 40px;
   min-width: 0;
-  padding: 0 6px 0 12px;
+  padding: 5px 6px 5px 12px;
   border-bottom: var(--hairline) solid var(--border-1);
   color: var(--ink-3);
   font-size: var(--text-xs);
+}
+
+.dock-git-where {
+  display: inline-flex;
+  flex: 0 1 auto;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 40%;
 }
 
 .dock-git-branch {
@@ -562,6 +572,110 @@ a.dock-icon-btn {
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.dock-git-message {
+  display: flex;
+  flex: 1 1 140px;
+  align-items: center;
+  gap: 1px;
+  min-width: 140px;
+  height: 28px;
+  padding: 0 2px 0 0;
+  border: var(--hairline) solid var(--border-1);
+  border-radius: var(--radius-md);
+  background: var(--inset);
+}
+
+.dock-git-message:focus-within {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -1px;
+}
+
+.dock-git-message-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 26px;
+  padding: 3px 8px;
+  resize: none;
+  overflow: hidden;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--text-sm);
+  line-height: 20px;
+  white-space: nowrap;
+}
+
+.dock-git-message-input:focus-visible {
+  outline: none;
+}
+
+.dock-git-message-input::placeholder {
+  color: var(--ink-4);
+}
+
+.dock-sync-btn {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 4px;
+  border-radius: var(--radius-sm);
+  color: var(--ink-3);
+  font-family: var(--font-code);
+  font-size: 11px;
+}
+
+.dock-sync-btn:hover:not(:disabled) {
+  background: var(--hover-wash);
+  color: var(--ink);
+}
+
+.dock-sync-btn:disabled {
+  opacity: 0.4;
+}
+
+.dock-sync-count {
+  color: var(--ink-2);
+}
+
+.dock-spin {
+  animation: dock-spin 0.9s linear infinite;
+}
+
+@keyframes dock-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.dock-git-status {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 4px 6px 4px 12px;
+  border-bottom: var(--hairline) solid var(--divider);
+  background: var(--hover-plate);
+  color: var(--ink-2);
+  font-size: var(--text-xs);
+}
+
+.dock-git-status > span {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.dock-git-status[data-error] {
+  color: var(--danger);
 }
 
 .dock-git-track {
@@ -724,21 +838,77 @@ a.dock-icon-btn {
   color: var(--ink);
 }
 
-.dock-commit-list {
+.dock-graph {
   padding-bottom: 6px;
 }
 
-.dock-commit-row {
+.dock-graph-row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  height: 24px;
-  padding: 0 10px;
+  gap: 6px;
+  height: 26px;
+  padding: 0 10px 0 6px;
   font-size: var(--text-xs);
 }
 
-.dock-commit-row:hover {
+.dock-graph-row:hover {
   background: var(--hover-wash);
+}
+
+.dock-graph-row[data-head] .dock-commit-subject {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.dock-graph-cell {
+  flex: none;
+  overflow: hidden;
+  fill: none;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+
+.dock-graph-cell circle {
+  stroke-width: inherit;
+}
+
+.dock-refs {
+  display: inline-flex;
+  flex: 0 1 auto;
+  gap: 3px;
+  min-width: 0;
+  max-width: 45%;
+  overflow: hidden;
+}
+
+.dock-ref {
+  flex: 0 1 auto;
+  min-width: 24px;
+  height: 17px;
+  padding: 0 5px;
+  overflow: hidden;
+  border: var(--hairline) solid var(--border-1);
+  border-radius: var(--radius-xs);
+  color: var(--ink-2);
+  font-size: 10.5px;
+  line-height: 15px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dock-ref[data-kind="head"] {
+  border-color: transparent;
+  background: var(--accent-tint);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.dock-ref[data-kind="remote"] {
+  color: var(--git-renamed);
+}
+
+.dock-ref[data-kind="tag"] {
+  color: var(--git-modified);
 }
 
 .dock-commit-hash {
@@ -762,30 +932,59 @@ a.dock-icon-btn {
   color: var(--ink-4);
 }
 
-.dock-commit {
+/* ---- floating commit editor (portaled to <body>) ---- */
+
+.dock-float {
+  position: fixed;
+  z-index: 70;
   display: flex;
-  flex: none;
   flex-direction: column;
+  width: min(420px, calc(100vw - 16px));
+  border: var(--hairline) solid var(--border-1);
+  border-radius: var(--radius-lg);
+  background: var(--overlay);
+  box-shadow: var(--shadow-2);
+  animation: ui-enter var(--dur-enter) var(--ease-out);
+}
+
+.dock-float-head {
+  display: flex;
+  align-items: center;
   gap: 6px;
-  padding: 8px 10px 10px;
-  border-top: var(--hairline) solid var(--border-1);
-}
-
-.dock-commit-notice {
-  padding: 4px 6px;
-  border-radius: var(--radius-sm);
-  background: var(--hover-plate);
-  color: var(--ink-2);
+  height: 34px;
+  padding: 0 6px 0 12px;
+  border-bottom: var(--hairline) solid var(--divider);
+  color: var(--ink-3);
   font-size: var(--text-xs);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
 }
 
-.dock-commit-input {
-  width: 100%;
-  min-height: 56px;
-  max-height: 132px;
+.dock-float-head:active {
+  cursor: grabbing;
+}
+
+.dock-float-title {
+  overflow: hidden;
+  color: var(--ink);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dock-float-count {
+  flex: 1 1 auto;
+  white-space: nowrap;
+}
+
+.dock-float-input {
+  min-height: 140px;
+  max-height: 50vh;
+  margin: 10px 10px 0;
   padding: 8px 10px;
-  resize: none;
-  overflow-y: auto;
+  resize: vertical;
   border: var(--hairline) solid var(--border-1);
   border-radius: var(--radius-md);
   background: var(--inset);
@@ -795,28 +994,31 @@ a.dock-icon-btn {
   line-height: 20px;
 }
 
-.dock-commit-input::placeholder {
+.dock-float-input::placeholder {
   color: var(--ink-4);
 }
 
-.dock-commit-input:focus-visible {
+.dock-float-input:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: -1px;
 }
 
-.dock-commit-foot {
+.dock-float-foot {
   display: flex;
   align-items: center;
   gap: 8px;
-  min-height: 26px;
+  padding: 8px 10px 10px;
 }
 
-.dock-commit-error {
+.dock-float-foot .dock-button:disabled {
+  opacity: 0.45;
+}
+
+.dock-float-hint {
   flex: 1 1 auto;
-  min-width: 0;
-  color: var(--danger);
+  color: var(--ink-4);
   font-size: var(--text-xs);
-  overflow-wrap: anywhere;
+  text-align: right;
 }
 
 .dock-primary {
@@ -836,6 +1038,16 @@ a.dock-icon-btn {
 
 .dock-primary:disabled {
   opacity: 0.45;
+}
+
+.dock-primary-sm {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  margin-left: 0;
+  padding: 0 9px 0 7px;
+  font-size: var(--text-xs);
 }
 
 /* ---------------------------------------------------------------- diff */

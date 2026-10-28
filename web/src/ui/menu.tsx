@@ -109,6 +109,7 @@ export function Menu({
                   role={checkable ? "menuitemradio" : "menuitem"}
                   aria-checked={checkable ? entry.checked : undefined}
                   className={entry.danger ? "menu-item menu-item-danger" : "menu-item"}
+                  title={entry.hint}
                   onClick={() => {
                     close(true);
                     entry.onSelect();

@@ -135,8 +135,9 @@
   animation: ui-enter var(--dur-enter) var(--ease-out);
 }
 
+/* Fixed width: extension/skill descriptions are long and must truncate, not widen the menu. */
 .menu-list-composer {
-  min-width: 340px;
+  width: min(420px, calc(100vw - 16px));
 }
 
 .menu-label {

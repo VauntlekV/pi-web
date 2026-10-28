@@ -3,10 +3,14 @@
 [![npm](https://img.shields.io/npm/v/@vauntlek/pi-web?color=d97757)](https://www.npmjs.com/package/@vauntlek/pi-web)
 [![node](https://img.shields.io/node/v/@vauntlek/pi-web)](https://nodejs.org)
 [![license](https://img.shields.io/npm/l/@vauntlek/pi-web)](LICENSE)
+[![CI](https://github.com/VauntlekV/pi-web/actions/workflows/ci.yml/badge.svg)](https://github.com/VauntlekV/pi-web/actions/workflows/ci.yml)
+[![demo](https://img.shields.io/badge/demo-在线体验-d97757)](https://vauntlekv.github.io/pi-web/)
 
 [pi](https://github.com/earendil-works/pi) 编码代理的 Web 界面，在浏览器里使用 pi，桌面和手机都可以。
 
 pi-web 在进程内嵌入 pi SDK（`@earendil-works/pi-coding-agent` 1.4.0），直接持有 `AgentSession`，不经过 RPC 子进程。它与 `pi` CLI 共用 `~/.pi/agent` 下的模型、凭据、设置、扩展、技能和会话，所以 CLI 里的会话可以在网页里接着聊，反之亦然。界面参考 [dsh-claude-style](https://github.com/Nwflower/dsh-claude-style) 的 Claude 风格。
+
+**[在线演示](https://vauntlekv.github.io/pi-web/)**：真实前端加上从真实服务端录制的回放数据（模拟模型、示例 Git 仓库），可以点开会话、文件和 Git 面板，发消息会回放一轮录好的对话；写操作是只读的。
 
 ![对话、工作步骤与右侧 Git 面板](https://raw.githubusercontent.com/VauntlekV/pi-web/main/docs/images/conversation-light.png)
 
@@ -89,8 +93,12 @@ npm install
 npm run dev        # API :30142（tsx watch）+ Vite :5173，/api 代理到后端
 npm test           # vitest；服务端测试用 pi-ai 的 faux 模型，不联网
 npm run typecheck
+npm run test:e2e   # Playwright，跑在 e2e/fixture.ts 的模拟模型和示例仓库上（首次需 npx playwright install chromium）
+npm run build:demo # GitHub Pages 演示站点 → dist/pages
 npm run build && npm start
 ```
+
+GitHub Actions：`CI` 在每次推送和 PR 上跑类型检查、构建、单元测试（Ubuntu / macOS × Node 22.19 / 24）、打包安装冒烟测试和 E2E；`Demo site` 在 main 上部署演示站点；发版流程见 [docs/RELEASING.md](docs/RELEASING.md)。
 
 前后端契约在 [`shared/protocol.ts`](shared/protocol.ts)，架构说明见 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)，视觉与交互规范见 [docs/DESIGN.md](docs/DESIGN.md)。
 

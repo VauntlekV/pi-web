@@ -23,7 +23,7 @@ export interface RightDockProps {
   sessionId: string | null;
 }
 
-export function RightDock(_props: RightDockProps) {
+export function RightDock({ sessionId }: RightDockProps) {
   const state = useDock();
   const active = state.tabs.find((tab) => tab.id === state.activeId) ?? state.tabs[0];
 
@@ -38,7 +38,7 @@ export function RightDock(_props: RightDockProps) {
         ) : active.kind === "file" ? (
           <FileTab key={`${state.cwd}:${active.path}`} cwd={state.cwd} path={active.path} line={active.line} />
         ) : active.kind === "git" ? (
-          <GitTab key={state.cwd} cwd={state.cwd} />
+          <GitTab key={state.cwd} cwd={state.cwd} sessionId={sessionId} />
         ) : (
           <DiffTab key={active.id} cwd={state.cwd} path={active.path} staged={active.staged} />
         )}
