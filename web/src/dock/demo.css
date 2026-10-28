@@ -1,0 +1,27 @@
+/* demo-dock.html only: a 520px shell card around the dock. */
+
+body {
+  background: var(--sidebar);
+}
+
+.dock-demo {
+  width: 520px;
+  max-width: 100%;
+  height: min(860px, calc(100vh - 48px));
+  margin: 24px auto;
+  overflow: hidden;
+  border: var(--hairline) solid var(--border-1);
+  border-radius: var(--radius-xl);
+  background: var(--canvas);
+  box-shadow: var(--shadow-1);
+}
+
+@media (max-width: 560px) {
+  .dock-demo {
+    width: 100%;
+    height: 100vh;
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+  }
+}

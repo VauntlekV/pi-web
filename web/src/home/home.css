@@ -1,0 +1,182 @@
+.home {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--canvas);
+}
+
+.home-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 0 24px;
+  overflow-y: auto;
+}
+
+.home-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: min(var(--content-width), 100%);
+  margin: 0 auto;
+  padding: 24px 0;
+}
+
+.home-greeting {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0;
+  padding: 0 2px;
+  color: var(--ink);
+  font-family: var(--font-brand);
+  font-size: var(--text-xl);
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+.home-mark {
+  color: var(--accent);
+}
+
+/* ---- usage card ---- */
+
+.home-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(480px, 100%);
+  padding: 12px;
+  border-radius: var(--radius-lg);
+  background: var(--chip);
+}
+
+.home-card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.home-overview {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  height: 22px;
+  padding: 0 10px;
+  border-radius: var(--radius-sm);
+  background: var(--canvas);
+  box-shadow: var(--shadow-1);
+  color: var(--ink);
+  font-size: var(--text-xs);
+}
+
+.home-range {
+  margin-left: auto;
+}
+
+.home-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.home-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--table-head);
+}
+
+.home-metric-label {
+  overflow: hidden;
+  color: var(--ink-3);
+  font-size: 12px;
+  line-height: 16px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.home-metric-value {
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 20px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
+}
+
+.home-heat {
+  /* 26 whole weeks stretched across the card, so the grid lines up with the
+     metric tiles' edges instead of leaving a ragged gap on the right. */
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(7, auto);
+  grid-template-columns: repeat(26, minmax(0, 1fr));
+  gap: 3px;
+}
+
+.home-heat-cell {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 2px;
+  background: var(--data-0);
+}
+
+.home-heat-cell[data-level="1"] {
+  background: var(--data-1);
+}
+
+.home-heat-cell[data-level="2"] {
+  background: var(--data-2);
+}
+
+.home-heat-cell[data-level="3"] {
+  background: var(--data-3);
+}
+
+.home-heat-cell[data-level="4"] {
+  background: var(--data-4);
+}
+
+.home-card-error {
+  margin: 0;
+  color: var(--ink-3);
+  font-size: var(--text-xs);
+}
+
+/* ---- composer ---- */
+
+.home-foot {
+  flex: none;
+  width: 100%;
+  max-width: calc(var(--content-width) + 48px);
+  margin: 0 auto;
+  padding: 12px 24px 20px;
+}
+
+@media (max-width: 767.5px) {
+  .home-body {
+    padding: 0 12px;
+  }
+
+  .home-inner {
+    padding-top: 16px;
+  }
+
+  .home-greeting {
+    font-size: var(--text-lg);
+  }
+
+  .home-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .home-foot {
+    padding: 8px 12px 12px;
+  }
+}

@@ -1,0 +1,276 @@
+.app {
+  display: flex;
+  height: 100%;
+  min-height: 0;
+  background: var(--canvas);
+}
+
+.sidebar-shell {
+  flex: none;
+  width: var(--sidebar-width);
+  height: 100%;
+  min-height: 0;
+}
+
+.app-body {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+}
+
+.app-main {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+  height: 100%;
+  container-type: inline-size;
+}
+
+/* Keep the conversation usable when the dock is open on a narrow window; the
+   dock gives way instead of squeezing the main column to a few pixels. */
+@media (min-width: 768px) {
+  .app-main {
+    min-width: 400px;
+  }
+}
+
+.app-main.is-hidden {
+  display: none;
+}
+
+/* ---- header shared by the home and plugins pages ---- */
+
+.page-head {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  height: var(--header-height);
+  padding: 0 12px;
+}
+
+.page-head-spacer {
+  flex: 1 1 auto;
+}
+
+/* ---- right dock ---- */
+
+.splitter {
+  position: relative;
+  z-index: 10;
+  flex: none;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  touch-action: none;
+  outline: none;
+}
+
+.splitter::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(50% - 1px);
+  width: 2px;
+  background: var(--border-3);
+  opacity: 0;
+  transition: opacity var(--dur-feedback) var(--ease-standard), background-color var(--dur-feedback);
+}
+
+.splitter:hover::after,
+.splitter:focus-visible::after {
+  opacity: 1;
+}
+
+.splitter.is-dragging::after {
+  opacity: 1;
+  background: var(--accent);
+}
+
+/* Sits over the sidebar's right border instead of taking room of its own. */
+.sidebar-split {
+  margin: 0 -3px;
+}
+
+body.is-resizing {
+  cursor: col-resize;
+  user-select: none;
+}
+
+body.is-resizing iframe {
+  pointer-events: none;
+}
+
+.dock-col {
+  flex: 0 1 auto;
+  min-width: 0;
+  height: 100%;
+  padding: var(--dock-gap);
+}
+
+.dock-col.is-full {
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+}
+
+.dock-col.is-overlay {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  max-width: calc(100% - 16px);
+  z-index: 30;
+}
+
+.dock-col.is-mobile {
+  position: absolute;
+  inset: 0;
+  width: auto;
+  max-width: none;
+  padding: 0;
+  z-index: 45;
+}
+
+.dock-card {
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid var(--border-1);
+  border-radius: var(--radius-xl);
+  background: var(--canvas);
+}
+
+.dock-col.is-overlay .dock-card {
+  box-shadow: var(--shadow-2);
+}
+
+.dock-col.is-mobile .dock-card {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.dock-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 29;
+  background: rgb(0 0 0 / 0.3);
+  animation: ui-fade var(--dur-enter) var(--ease-out);
+}
+
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 39;
+  background: rgb(0 0 0 / 0.3);
+  animation: ui-fade var(--dur-enter) var(--ease-out);
+}
+
+/* ---- boot / login / error screens ---- */
+
+.screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 24px;
+  background: var(--canvas);
+}
+
+.boot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.login-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: min(360px, 100%);
+  padding: 28px 24px 22px;
+  border: 1px solid var(--border-1);
+  border-radius: var(--radius-xl);
+  background: var(--surface-1);
+  box-shadow: var(--shadow-1);
+  text-align: center;
+}
+
+.login-brand {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 6px;
+}
+
+.login-mark {
+  color: var(--accent);
+  font-family: var(--font-brand);
+  font-size: 30px;
+  line-height: 1;
+}
+
+.login-word {
+  color: var(--ink);
+  font-family: var(--font-brand);
+  font-size: 26px;
+  line-height: 1;
+}
+
+.login-title {
+  margin: 4px 0 0;
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: var(--text-base);
+  font-weight: 600;
+}
+
+.login-error {
+  margin: 0;
+  color: var(--danger);
+  font-size: var(--text-sm);
+}
+
+.login-hint {
+  margin: 2px 0 0;
+  color: var(--ink-4);
+  font-size: var(--text-xs);
+  line-height: var(--leading-ui);
+}
+
+@media (max-width: 767.5px) {
+  .sidebar-shell {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 40;
+    width: min(var(--sidebar-width), 85vw);
+    height: 100%;
+    visibility: hidden;
+    transform: translateX(-100%);
+    transition: transform var(--dur-enter) var(--ease-out), visibility var(--dur-enter);
+  }
+
+  .sidebar-shell.open {
+    visibility: visible;
+    transform: none;
+  }
+
+  .sidebar-shell .sidebar {
+    border-right: none;
+    box-shadow: var(--shadow-2);
+  }
+}
+
+@media (min-width: 768px) {
+  .drawer-overlay {
+    display: none;
+  }
+}

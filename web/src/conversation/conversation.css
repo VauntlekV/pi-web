@@ -1,0 +1,295 @@
+.conv {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  background: var(--canvas);
+}
+
+/* ---- header ---- */
+
+.conv-head {
+  position: relative;
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  height: var(--header-height);
+  padding: 0 12px;
+  border-bottom: 1px solid transparent;
+  user-select: none;
+  transition: border-color var(--dur-feedback) var(--ease-standard);
+}
+
+.conv-head.scrolled {
+  border-bottom-color: var(--divider);
+}
+
+.conv-title-wrap {
+  display: flex;
+  flex: 0 1 auto;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  max-width: min(32%, 360px);
+}
+
+.conv-title {
+  /* the title outranks the model name: it never shrinks to a single glyph */
+  min-width: 120px;
+  margin: 0;
+  overflow: hidden;
+  color: var(--ink);
+  font-family: var(--font-brand);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: var(--leading-ui);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.conv-title-wrap:hover .title-edit,
+.title-edit:focus-visible {
+  opacity: 1;
+}
+
+.title-edit {
+  width: 22px;
+  height: 22px;
+  opacity: 0;
+}
+
+.conv-title-input {
+  width: 240px;
+  max-width: 100%;
+  height: 26px;
+  padding: 0 6px;
+  border: 1px solid var(--field-ring);
+  border-radius: var(--radius-xs);
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: var(--font-brand);
+  font-size: 15px;
+  font-weight: 600;
+  outline: none;
+}
+
+.conv-model {
+  flex: none;
+  max-width: 160px;
+  overflow: hidden;
+  color: var(--ink-3);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.conv-reconnecting {
+  flex: none;
+  color: var(--warn);
+  font-size: var(--text-xs);
+}
+
+.conv-head-spacer {
+  flex: 1 1 auto;
+  min-width: 8px;
+}
+
+.conv-actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+}
+
+.view-tabs {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* split "open in right dock" control */
+
+.conv-split {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  border: 1px solid var(--border-1);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  transition: border-color var(--dur-feedback) var(--ease-standard);
+}
+
+.conv-split:hover {
+  border-color: var(--border-2);
+}
+
+.conv-split-main,
+.conv-split-more {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--ink-2);
+  transition: background-color var(--dur-feedback) var(--ease-standard), color var(--dur-feedback);
+}
+
+.conv-split-main {
+  width: 28px;
+}
+
+.conv-split-more {
+  width: 22px;
+  border-left: 1px solid var(--border-1);
+}
+
+.conv-split-main:hover,
+.conv-split-more:hover {
+  background: var(--hover-wash);
+  color: var(--ink);
+}
+
+/* ---- transcript ---- */
+
+.conv-scroll {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.conv-column {
+  width: 100%;
+  max-width: calc(var(--content-width) + 48px);
+  margin: 0 auto;
+  padding: 24px 24px 160px;
+}
+
+.conv-compacting {
+  margin-top: 16px;
+  color: var(--ink-3);
+  font-size: var(--text-sm);
+}
+
+/* ---- composer ---- */
+
+.conv-foot {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  max-width: calc(var(--content-width) + 48px);
+  margin: 0 auto;
+  padding: 0 24px 16px;
+  background: var(--canvas);
+}
+
+.conv-foot::before {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 100%;
+  left: 0;
+  height: 24px;
+  background: linear-gradient(to top, var(--canvas), transparent);
+  pointer-events: none;
+}
+
+.conv-jump {
+  position: absolute;
+  right: 24px;
+  bottom: 148px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border-1);
+  border-radius: 50%;
+  background: var(--overlay);
+  box-shadow: var(--shadow-1);
+  color: var(--ink-2);
+  transition: background-color var(--dur-feedback) var(--ease-standard);
+}
+
+.conv-jump:hover {
+  background: var(--hover-plate);
+  color: var(--ink);
+}
+
+/* The dock can shrink the main column well below the window width: give up
+   the model name first, then tighten the view tabs; the title keeps 120px. */
+@container (max-width: 899.5px) {
+  .conv-model {
+    display: none;
+  }
+}
+
+@container (max-width: 520px) {
+  .view-tabs .segmented {
+    height: 24px;
+  }
+
+  .view-tabs .segmented-item {
+    height: 20px;
+    padding: 0 7px;
+  }
+}
+
+@container (max-width: 380px) {
+  .view-tabs {
+    display: none;
+  }
+}
+
+@media (max-width: 767.5px) {
+  .view-tabs {
+    display: none;
+  }
+
+  .conv-head {
+    gap: 6px;
+    padding: 0 8px;
+  }
+
+  .title-edit {
+    opacity: 1;
+  }
+
+  .conv-actions {
+    gap: 2px;
+  }
+
+  .conv-column {
+    padding: 16px 12px 150px;
+  }
+
+  .conv-foot {
+    padding: 0 12px 10px;
+  }
+
+  .conv-jump {
+    right: 16px;
+    bottom: 132px;
+  }
+}
+
+/* Once the column fills the main area, keep the prose clear of the turn
+   navigator's rail at the right edge (rail 28px + 12px inset). */
+@container (max-width: 880px) {
+  .conv-column {
+    padding-right: 48px;
+  }
+}
+
+/* 聊天区滚动动画 on: the back-to-end button sits centred over the composer. */
+.conv-jump.is-centered {
+  right: auto;
+  left: 50%;
+  transform: translateX(-50%);
+}

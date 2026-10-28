@@ -1,0 +1,356 @@
+/*
+ * Design tokens — the only place colours, type, radii and motion are defined.
+ * Values follow the "Claude" palette card of dsh-claude-style (OKLCH tones
+ * resolved to sRGB). Components read `var(--…)` only; no literal colours
+ * elsewhere.
+ *
+ * Theme: follows the system unless <html data-theme="light|dark"> forces one.
+ */
+
+@font-face {
+  font-family: "PiWeb Inter";
+  src: url("/fonts/InterVariable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "PiWeb Serif";
+  src: url("/fonts/NotoSerifVariable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+:root {
+  color-scheme: light;
+
+  /* ---- type ---- */
+  --font-ui: "PiWeb Inter", "Noto Sans SC", "Noto Sans CJK SC", "Source Han Sans SC", -apple-system,
+    BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", Helvetica, Arial, sans-serif;
+  /* Latin prose in serif, CJK falls through to sans (the serif carries no CJK glyphs). */
+  --font-prose: "PiWeb Serif", Georgia, "Times New Roman", "Noto Sans SC", "Noto Sans CJK SC", "Source Han Sans SC",
+    "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-brand: "PiWeb Serif", Georgia, serif;
+  --font-code: "JetBrains Mono", "Fira Code", ui-monospace, "SF Mono", "Noto Sans Mono CJK SC", Consolas, Menlo, monospace;
+
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-md: 14px;
+  --text-base: 15px; /* prose body */
+  --text-lg: 18px; /* h2 in prose */
+  --text-xl: 22px;
+  --text-hero: 26px; /* home greeting */
+  --leading-prose: 1.7;
+  --leading-ui: 1.45;
+
+  /* ---- colour: Claude card, light ---- */
+  --accent: #d97757;
+  --accent-hover: #c46343;
+  --accent-active: rgb(246 136 98 / 0.26);
+  --accent-tint: #f6ded7;
+  --on-accent: #ffffff;
+
+  --canvas: #ffffff; /* page / conversation column */
+  --sidebar: #fafafa; /* sidebar column */
+  --surface-1: #ffffff;
+  --surface-2: #ffffff;
+  --surface-3: #ffffff;
+  --overlay: #ffffff; /* menus, popovers, dialogs */
+  --card: #ffffff;
+  --inset: #ffffff; /* text fields */
+  --code-block: #ffffff;
+  --table-head: #f4f4f4;
+  --hover-plate: #f4f4f4; /* solid hover / selected row (sidebar active session) */
+  --chip: #f9f9f9; /* segmented control at rest */
+  --selector: #fefefe;
+  --bubble: #f4f2f3; /* user message bubble */
+
+  --ink: #161616; /* primary text */
+  --ink-2: #6d6a64; /* secondary */
+  --ink-3: #8d8a83; /* tertiary / meta */
+  --ink-4: #afada9; /* captions, placeholders */
+  --inverse-ink: #ffffff;
+
+  --border-1: #e9e9e9; /* standard edge: cards, panels, fields */
+  --border-2: #dedede;
+  --border-3: #cfcfcf;
+  --divider: rgb(22 22 22 / 0.05);
+  --hover-wash: rgb(6 6 6 / 0.08); /* translucent hover */
+  --code-wash: rgb(6 6 6 / 0.05); /* inline code fill */
+  --code-ink: #943333; /* inline code text */
+  --link: #184f95;
+  --link-underline: rgb(24 79 149 / 0.6);
+  --ui-link: #bf6446;
+  --ui-link-hover: #a35035;
+  --focus-ring: rgb(20 20 19 / 0.45);
+  --field-ring: #2a78d6;
+  --scrollbar: rgb(213 213 213 / 0.9);
+  --scrollbar-hover: rgb(138 138 138 / 0.8);
+
+  --ok: #3d7550;
+  --warn: #a4621d;
+  --danger: #c2412d;
+  --diff-add-bg: rgb(61 117 80 / 0.12);
+  --diff-add-ink: #2f6b43;
+  --diff-del-bg: rgb(194 65 45 / 0.10);
+  --diff-del-ink: #a8382a;
+
+  --shadow-1: 0 1px 3px rgb(20 20 19 / 0.05);
+  --shadow-2: 0 4px 18px rgb(20 20 19 / 0.10), 0 1px 3px rgb(20 20 19 / 0.05);
+
+  /* ---- shape ---- */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px; /* buttons, chips, sidebar rows */
+  --radius-lg: 12px; /* cards, code blocks, tables, composer */
+  --radius-xl: 16px; /* user bubble, dialogs */
+  --hairline: 0.5px;
+
+  /* ---- layout ---- */
+  --sidebar-width: 280px;
+  --content-width: 744px; /* conversation column max width */
+  --header-height: 48px;
+
+  /* ---- motion ---- */
+  --dur-feedback: 120ms; /* hover / press / focus */
+  --dur-reveal: 120ms; /* content entering the chat */
+  --dur-enter: 320ms; /* panels opening */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ---- colour: Claude card, dark ---- */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --accent-hover: #eb9170;
+    --accent-active: rgb(217 119 87 / 0.3);
+    --accent-tint: #48261b;
+    --on-accent: #fbfbfb;
+
+    --canvas: #191919;
+    --sidebar: #1f1f1f;
+    --surface-1: #212121;
+    --surface-2: #282828;
+    --surface-3: #323232;
+    --overlay: #282828;
+    --card: #232323;
+    --inset: #141414;
+    --code-block: #212121;
+    --table-head: #282828;
+    --hover-plate: #323232;
+    --chip: #191919;
+    --selector: #323232;
+    --bubble: rgb(255 255 255 / 0.06);
+
+    --ink: #fdfdfd;
+    --ink-2: #bbb9b2;
+    --ink-3: #98958e;
+    --ink-4: #74716b;
+    --inverse-ink: #171717;
+
+    --border-1: rgb(255 255 255 / 0.09);
+    --border-2: rgb(255 255 255 / 0.18);
+    --border-3: rgb(255 255 255 / 0.3);
+    --divider: rgb(255 255 255 / 0.06);
+    --hover-wash: rgb(255 255 255 / 0.08);
+    --code-wash: rgb(255 255 255 / 0.05);
+    --code-ink: #e8a08a;
+    --link: #8ab4f8;
+    --link-underline: rgb(138 180 248 / 0.6);
+    --ui-link: #eaa088;
+    --ui-link-hover: #ffbea6;
+    --focus-ring: rgb(250 249 245 / 0.6);
+    --scrollbar: rgb(62 62 62 / 0.9);
+    --scrollbar-hover: rgb(113 113 113 / 0.9);
+
+    --ok: #8cbf96;
+    --warn: #e2a45f;
+    --danger: #f07a66;
+    --diff-add-bg: rgb(140 191 150 / 0.14);
+    --diff-add-ink: #9fd3a9;
+    --diff-del-bg: rgb(240 122 102 / 0.14);
+    --diff-del-ink: #f5a191;
+
+    --shadow-1: 0 1px 3px rgb(0 0 0 / 0.14);
+    --shadow-2: 0 4px 16px rgb(0 0 0 / 0.3), 0 1px 3px rgb(0 0 0 / 0.14);
+  }
+}
+
+/* Forced dark: same values as the media block above. Keep the two in sync. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --accent-hover: #eb9170;
+  --accent-active: rgb(217 119 87 / 0.3);
+  --accent-tint: #48261b;
+  --on-accent: #fbfbfb;
+
+  --canvas: #191919;
+  --sidebar: #1f1f1f;
+  --surface-1: #212121;
+  --surface-2: #282828;
+  --surface-3: #323232;
+  --overlay: #282828;
+  --card: #232323;
+  --inset: #141414;
+  --code-block: #212121;
+  --table-head: #282828;
+  --hover-plate: #323232;
+  --chip: #191919;
+  --selector: #323232;
+  --bubble: rgb(255 255 255 / 0.06);
+
+  --ink: #fdfdfd;
+  --ink-2: #bbb9b2;
+  --ink-3: #98958e;
+  --ink-4: #74716b;
+  --inverse-ink: #171717;
+
+  --border-1: rgb(255 255 255 / 0.09);
+  --border-2: rgb(255 255 255 / 0.18);
+  --border-3: rgb(255 255 255 / 0.3);
+  --divider: rgb(255 255 255 / 0.06);
+  --hover-wash: rgb(255 255 255 / 0.08);
+  --code-wash: rgb(255 255 255 / 0.05);
+  --code-ink: #e8a08a;
+  --link: #8ab4f8;
+  --link-underline: rgb(138 180 248 / 0.6);
+  --ui-link: #eaa088;
+  --ui-link-hover: #ffbea6;
+  --focus-ring: rgb(250 249 245 / 0.6);
+  --scrollbar: rgb(62 62 62 / 0.9);
+  --scrollbar-hover: rgb(113 113 113 / 0.9);
+
+  --ok: #8cbf96;
+  --warn: #e2a45f;
+  --danger: #f07a66;
+  --diff-add-bg: rgb(140 191 150 / 0.14);
+  --diff-add-ink: #9fd3a9;
+  --diff-del-bg: rgb(240 122 102 / 0.14);
+  --diff-del-ink: #f5a191;
+
+  --shadow-1: 0 1px 3px rgb(0 0 0 / 0.14);
+  --shadow-2: 0 4px 16px rgb(0 0 0 / 0.3), 0 1px 3px rgb(0 0 0 / 0.14);
+}
+
+/* ---- syntax highlighting (highlight.js / rehype-highlight) ---- */
+:root {
+  --syntax-comment: #9a968f;
+  --syntax-keyword: #b2517f;
+  --syntax-string: #a8562a;
+  --syntax-number: #a06a1f;
+  --syntax-title: #4a5fa5;
+  --syntax-type: #6b4fa8;
+  --syntax-variable: #3f6a88;
+  --syntax-tag: #2f6b43;
+  --syntax-meta: #8d8a83;
+  --syntax-deletion: #a8382a;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --syntax-comment: #74716b;
+    --syntax-keyword: #e39ac2;
+    --syntax-string: #e8a87c;
+    --syntax-number: #d7b06a;
+    --syntax-title: #9fb4f0;
+    --syntax-type: #b9a0e8;
+    --syntax-variable: #8fc7c0;
+    --syntax-tag: #9fd3a9;
+    --syntax-meta: #98958e;
+    --syntax-deletion: #f5a191;
+  }
+}
+
+:root[data-theme="dark"] {
+  --syntax-comment: #74716b;
+  --syntax-keyword: #e39ac2;
+  --syntax-string: #e8a87c;
+  --syntax-number: #d7b06a;
+  --syntax-title: #9fb4f0;
+  --syntax-type: #b9a0e8;
+  --syntax-variable: #8fc7c0;
+  --syntax-tag: #9fd3a9;
+  --syntax-meta: #98958e;
+  --syntax-deletion: #f5a191;
+}
+
+/* ---- v2: data viz (home heat grid), trajectory role badges, git status, layout ---- */
+:root {
+  --content-font-size: 15px; /* conversation prose; set from prefs at runtime */
+  --dock-gap: 8px;
+
+  /* heat grid: empty cell, then 4 intensity steps (dsh "data blue") */
+  --data-0: #ebebea;
+  --data-1: #c8d6f2;
+  --data-2: #94b1e8;
+  --data-3: #5f88da;
+  --data-4: #3b6ecf;
+
+  /* trajectory role badges: background / text */
+  --badge-user-bg: #fbe3da;
+  --badge-user-ink: #b24a2a;
+  --badge-assistant-bg: #fde2df;
+  --badge-assistant-ink: #c2412d;
+  --badge-tool-bg: #fdebd3;
+  --badge-tool-ink: #b8630f;
+  --badge-context-bg: #dff2e3;
+  --badge-context-ink: #2f7a45;
+  --badge-system-bg: #ececea;
+  --badge-system-ink: #6d6a64;
+
+  /* git change letters */
+  --git-modified: #b8860b;
+  --git-added: #2f7a45;
+  --git-deleted: #c2412d;
+  --git-renamed: #3b6ecf;
+  --git-conflicted: #b2517f;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --data-0: #262626;
+    --data-1: #22355a;
+    --data-2: #2e4f8f;
+    --data-3: #4a76c9;
+    --data-4: #7fa6ff;
+    --badge-user-bg: #48261b;
+    --badge-user-ink: #f0a88e;
+    --badge-assistant-bg: #4a221d;
+    --badge-assistant-ink: #f5a191;
+    --badge-tool-bg: #45301a;
+    --badge-tool-ink: #f0b46e;
+    --badge-context-bg: #1f3a27;
+    --badge-context-ink: #9fd3a9;
+    --badge-system-bg: #2c2c2b;
+    --badge-system-ink: #bbb9b2;
+    --git-modified: #e2b45f;
+    --git-added: #8cbf96;
+    --git-deleted: #f07a66;
+    --git-renamed: #8ab4f8;
+    --git-conflicted: #e39ac2;
+  }
+}
+
+:root[data-theme="dark"] {
+  --data-0: #262626;
+  --data-1: #22355a;
+  --data-2: #2e4f8f;
+  --data-3: #4a76c9;
+  --data-4: #7fa6ff;
+  --badge-user-bg: #48261b;
+  --badge-user-ink: #f0a88e;
+  --badge-assistant-bg: #4a221d;
+  --badge-assistant-ink: #f5a191;
+  --badge-tool-bg: #45301a;
+  --badge-tool-ink: #f0b46e;
+  --badge-context-bg: #1f3a27;
+  --badge-context-ink: #9fd3a9;
+  --badge-system-bg: #2c2c2b;
+  --badge-system-ink: #bbb9b2;
+  --git-modified: #e2b45f;
+  --git-added: #8cbf96;
+  --git-deleted: #f07a66;
+  --git-renamed: #8ab4f8;
+  --git-conflicted: #e39ac2;
+}

@@ -1,0 +1,99 @@
+/* Styles for demo-transcript.html only. */
+
+.demo-bar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 8px 16px;
+  border-bottom: var(--hairline) solid var(--border-1);
+  background: var(--surface-1);
+}
+
+.demo-shell {
+  position: relative;
+  height: calc(100vh - 61px);
+  overflow: hidden;
+}
+
+.demo-scroll {
+  height: 100%;
+  overflow-y: auto;
+}
+
+.demo-column {
+  max-width: var(--content-width);
+  margin: 0 auto;
+  padding: 32px 24px 160px;
+}
+
+.demo-label {
+  margin-bottom: 24px;
+  color: var(--ink-4);
+  font-size: var(--text-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.demo-btn {
+  padding: 4px 10px;
+  border: var(--hairline) solid var(--border-1);
+  border-radius: var(--radius-md);
+  background: var(--overlay);
+  color: var(--ink-2);
+  font-size: var(--text-xs);
+}
+
+.demo-btn:hover {
+  background: var(--hover-plate);
+}
+
+.demo-btn[aria-pressed="true"] {
+  border-color: var(--border-2);
+  background: var(--hover-plate);
+  color: var(--ink);
+}
+
+.demo-seg {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--radius-md);
+  background: var(--chip);
+}
+
+.demo-seg .demo-btn {
+  border-color: transparent;
+  background: none;
+}
+
+.demo-seg .demo-btn[aria-pressed="true"] {
+  background: var(--surface-1);
+  box-shadow: var(--shadow-1);
+}
+
+.demo-note {
+  color: var(--ink-4);
+  font-size: var(--text-xs);
+}
+
+.demo-log {
+  position: fixed;
+  bottom: 12px;
+  left: 12px;
+  z-index: 20;
+  max-width: 420px;
+  padding: 8px 12px;
+  border: var(--hairline) solid var(--border-1);
+  border-radius: var(--radius-md);
+  background: var(--overlay);
+  box-shadow: var(--shadow-2);
+  color: var(--ink-3);
+  font-family: var(--font-code);
+  font-size: 11px;
+  line-height: 1.5;
+}

@@ -1,0 +1,301 @@
+/*
+ * Shared motion looks (设置 › 动效): the status line's loader, its wording
+ * swap and its two paints, and the sent message's entrance. Values follow
+ * dsh-claude-style's motion tokens (docs/STYLE.md there). Everything stills
+ * under <html data-motion="reduced"> (base.css's net plus the rules below).
+ *
+ * The colour wash is transitions.dev's "Pro gradient text" as carried by
+ * dsh-claude-style (MIT); see docs/THIRD_PARTY_NOTICES.md.
+ */
+
+:root {
+  --wash-layers:
+    url("data:image/svg+xml;utf8,<svg viewBox='0 0 67 42' xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='none'><rect x='0' y='0' height='100%' width='100%' fill='url(%23grad)' opacity='0.88'/><defs><radialGradient id='grad' gradientUnits='userSpaceOnUse' cx='0' cy='0' r='10' gradientTransform='matrix(0.34726 -1.3118e-7 8.6482e-7 0.89585 33.5 21)'><stop stop-color='rgba(0,110,245,1)' offset='0'/><stop stop-color='rgba(0,110,245,0)' offset='1'/></radialGradient></defs></svg>"),
+    url("data:image/svg+xml;utf8,<svg viewBox='0 0 67 42' xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='none'><rect x='0' y='0' height='100%' width='100%' fill='url(%23grad)' opacity='0.5'/><defs><radialGradient id='grad' gradientUnits='userSpaceOnUse' cx='0' cy='0' r='10' gradientTransform='matrix(-1.3 0.25 -1.2633 -2.7471 33.5 21)'><stop stop-color='rgba(0,110,245,1)' offset='0'/><stop stop-color='rgba(0,110,245,0)' offset='1'/></radialGradient></defs></svg>"),
+    url("data:image/svg+xml;utf8,<svg viewBox='0 0 67 42' xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='none'><rect x='0' y='0' height='100%' width='100%' fill='url(%23grad)' opacity='0.4'/><defs><radialGradient id='grad' gradientUnits='userSpaceOnUse' cx='0' cy='0' r='10' gradientTransform='matrix(1.05 -0.8 0.46018 3.6184 33.5 21)'><stop stop-color='rgba(204,0,167,1)' offset='0'/><stop stop-color='rgba(170,0,204,0)' offset='0.71709'/></radialGradient></defs></svg>"),
+    url("data:image/svg+xml;utf8,<svg viewBox='0 0 67 42' xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='none'><rect x='0' y='0' height='100%' width='100%' fill='url(%23grad)'/><defs><radialGradient id='grad' gradientUnits='userSpaceOnUse' cx='0' cy='0' r='10' gradientTransform='matrix(-0.51067 -3.3275e-16 -4.3352e-14 -1.1396 33.5 21)'><stop stop-color='rgba(204,0,167,1)' offset='0'/><stop stop-color='rgba(170,0,204,0)' offset='1'/></radialGradient></defs></svg>"),
+    url("data:image/svg+xml;utf8,<svg viewBox='0 0 67 42' xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='none'><rect x='0' y='0' height='100%' width='100%' fill='url(%23grad)'/><defs><radialGradient id='grad' gradientUnits='userSpaceOnUse' cx='0' cy='0' r='10' gradientTransform='matrix(-0.45 -0.75 1.9052 -0.7091 33.5 21)'><stop stop-color='rgba(255,173,85,1)' offset='0'/><stop stop-color='rgba(255,173,85,0)' offset='1'/></radialGradient></defs></svg>"),
+    url("data:image/svg+xml;utf8,<svg viewBox='0 0 67 42' xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='none'><rect x='0' y='0' height='100%' width='100%' fill='url(%23grad)'/><defs><radialGradient id='grad' gradientUnits='userSpaceOnUse' cx='0' cy='0' r='10' gradientTransform='matrix(1.25 -0.35 -0.4013 3.5959 33.5 21)'><stop stop-color='rgba(0,204,68,1)' offset='0'/><stop stop-color='rgba(0,196,102,0.75)' offset='0.25'/><stop stop-color='rgba(0,187,136,0.5)' offset='0.5'/><stop stop-color='rgba(0,170,204,0)' offset='1'/></radialGradient></defs></svg>"),
+    url("data:image/svg+xml;utf8,<svg viewBox='0 0 67 42' xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='none'><rect x='0' y='0' height='100%' width='100%' fill='url(%23grad)'/><defs><radialGradient id='grad' gradientUnits='userSpaceOnUse' cx='0' cy='0' r='10' gradientTransform='matrix(-0.87391 0.73043 -4.1482 -1.9503 33.5 21)'><stop stop-color='rgba(0,170,204,1)' offset='0'/><stop stop-color='rgba(0,170,204,0)' offset='1'/></radialGradient></defs></svg>"),
+    linear-gradient(rgb(108, 108, 108) 0%, rgb(216, 216, 216) 100%);
+  --wash-sizes: 180% 180%, 180% 180%, 180% 180%, 180% 180%, 180% 180%, 180% 180%, 180% 180%, 100% 100%;
+  --ease-enter: cubic-bezier(0.34, 1.3, 0.64, 1);
+  --ease-glide: cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+/* ---- status line ---- */
+
+.status-line {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  max-width: 100%;
+  white-space: nowrap;
+}
+
+.status-loader {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  align-items: flex-end;
+  gap: 3px;
+  width: 18px;
+  height: 14px;
+  margin-right: 6px;
+}
+
+.status-loader i {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: status-dot-bounce 500ms cubic-bezier(0.37, 0, 0.63, 1) infinite alternate;
+}
+
+.status-loader i:nth-child(2) {
+  animation-delay: 160ms;
+}
+
+.status-loader i:nth-child(3) {
+  animation-delay: 320ms;
+}
+
+@keyframes status-dot-bounce {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-8px);
+  }
+}
+
+.status-clock {
+  flex: none;
+  margin-left: 8px;
+  color: var(--ink-4);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- wording swap (transitions.dev "Text states swap", via dsh-claude-style) ---- */
+
+.swap-words {
+  position: relative;
+  display: inline-flex;
+  min-width: 0;
+  overflow: hidden;
+  /* room for the travel, so the blurred halves are not clipped flat */
+  padding: 2px 0;
+  margin: -2px 0;
+}
+
+.swap-current {
+  display: inline-block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.swap-enter {
+  animation: swap-in 150ms ease-in-out 50ms both;
+}
+
+.swap-leave {
+  position: absolute;
+  top: 2px;
+  left: 0;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: swap-out 150ms ease-in-out both;
+}
+
+@keyframes swap-out {
+  from {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    filter: blur(2px);
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes swap-in {
+  from {
+    opacity: 0;
+    filter: blur(2px);
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+  }
+}
+
+/* ---- the two paints ----
+   Selected for the live line by <html data-status-paint>, and directly by the
+   .paint-sweep / .paint-wash classes on the settings preview cards. */
+
+.status-paint {
+  position: relative;
+  display: inline-block;
+}
+
+:root[data-status-paint="sweep"] .status-line.is-live .status-paint,
+.paint-sweep .status-paint {
+  /* a lighter band crossing the words over two thirds of each 1.5s pass */
+  background-image: linear-gradient(105deg, var(--ink-3) 0% 40%, var(--ink) 50%, var(--ink-3) 60% 100%);
+  background-size: 300% 100%;
+  background-position: 100% 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  animation: paint-sweep 1500ms steps(48, end) 300ms infinite;
+}
+
+@keyframes paint-sweep {
+  0% {
+    background-position: 100% 0;
+  }
+  66.6667%,
+  100% {
+    background-position: 0% 0;
+  }
+}
+
+:root[data-status-paint="wash"] .status-line.is-live .status-paint,
+.paint-wash .status-paint {
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+:root[data-status-paint="wash"] .status-line.is-live .status-paint::before,
+.paint-wash .status-paint::before {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  white-space: nowrap;
+  pointer-events: none;
+  background-image: var(--wash-layers);
+  background-repeat: no-repeat;
+  background-size: var(--wash-sizes);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  animation:
+    wash-hue 4000ms steps(24, end) infinite,
+    wash-drift 5000ms steps(24, end) infinite;
+}
+
+@keyframes wash-hue {
+  from {
+    filter: hue-rotate(0deg) saturate(1.3);
+  }
+  to {
+    filter: hue-rotate(-360deg) saturate(1.3);
+  }
+}
+
+@keyframes wash-drift {
+  0%,
+  100% {
+    background-position: 100% 0%, 0% 50%, 100% 50%, 0% 100%, 0% 0%, 50% 0%, 50% 100%, 0 0;
+  }
+  25% {
+    background-position: 100% 100%, 50% 0%, 50% 100%, 0% 0%, 100% 0%, 100% 50%, 0% 50%, 0 0;
+  }
+  50% {
+    background-position: 0% 100%, 100% 50%, 0% 50%, 100% 0%, 100% 100%, 50% 100%, 50% 0%, 0 0;
+  }
+  75% {
+    background-position: 0% 0%, 50% 100%, 50% 0%, 100% 100%, 0% 100%, 0% 50%, 100% 50%, 0 0;
+  }
+}
+
+/* Reduced: the band is left off (plain words) and the wash holds its first frame. */
+:root[data-motion="reduced"] .status-line.is-live .status-paint,
+:root[data-motion="reduced"] .paint-sweep .status-paint {
+  background-image: none;
+  color: var(--ink-3);
+  -webkit-text-fill-color: currentColor;
+  animation: none;
+}
+
+:root[data-motion="reduced"][data-status-paint="wash"] .status-line.is-live .status-paint {
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+:root[data-motion="reduced"] .status-paint::before,
+:root[data-motion="reduced"] .status-loader i {
+  animation: none;
+}
+
+/* ---- sent message entrance (消息气泡动画) ---- */
+
+.enter-grow {
+  transform-origin: 100% 100%;
+  animation: enter-grow 320ms var(--ease-enter) both;
+}
+
+@keyframes enter-grow {
+  from {
+    transform: scale(0);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+/* ---- new-text fade (新文字淡入): one ::highlight per step, see transcript/reveal.ts ---- */
+::highlight(pi-reveal-0) {
+  color: color-mix(in srgb, var(--reveal-ink, var(--ink)) 10%, transparent);
+}
+
+::highlight(pi-reveal-1) {
+  color: color-mix(in srgb, var(--reveal-ink, var(--ink)) 18%, transparent);
+}
+
+::highlight(pi-reveal-2) {
+  color: color-mix(in srgb, var(--reveal-ink, var(--ink)) 25%, transparent);
+}
+
+::highlight(pi-reveal-3) {
+  color: color-mix(in srgb, var(--reveal-ink, var(--ink)) 32%, transparent);
+}
+
+::highlight(pi-reveal-4) {
+  color: color-mix(in srgb, var(--reveal-ink, var(--ink)) 40%, transparent);
+}
+
+::highlight(pi-reveal-5) {
+  color: color-mix(in srgb, var(--reveal-ink, var(--ink)) 48%, transparent);
+}
+
+::highlight(pi-reveal-6) {
+  color: color-mix(in srgb, var(--reveal-ink, var(--ink)) 55%, transparent);
+}
+
+::highlight(pi-reveal-7) {
+  color: color-mix(in srgb, var(--reveal-ink, var(--ink)) 62%, transparent);
+}
+
+::highlight(pi-reveal-8) {
+  color: color-mix(in srgb, var(--reveal-ink, var(--ink)) 70%, transparent);
+}
+
+::highlight(pi-reveal-9) {
+  color: color-mix(in srgb, var(--reveal-ink, var(--ink)) 78%, transparent);
+}
+
+::highlight(pi-reveal-10) {
+  color: color-mix(in srgb, var(--reveal-ink, var(--ink)) 85%, transparent);
+}
+
+::highlight(pi-reveal-11) {
+  color: color-mix(in srgb, var(--reveal-ink, var(--ink)) 92%, transparent);
+}
