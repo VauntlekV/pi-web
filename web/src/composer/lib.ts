@@ -94,18 +94,9 @@ export function filterCommands(commands: CommandInfo[], query: string): CommandI
   return [...prefix, ...substring];
 }
 
-const THINKING_LABELS: Record<ThinkingLevel, string> = {
-  off: "关闭",
-  minimal: "极简",
-  low: "低",
-  medium: "中",
-  high: "高",
-  xhigh: "超高",
-  max: "最大",
-};
-
+/** Thinking levels are shown by their English names, as pi itself and the providers call them. */
 export function thinkingLabel(level: ThinkingLevel): string {
-  return THINKING_LABELS[level] ?? level;
+  return level;
 }
 
 /** 999 → "999", 5400 → "5.4K", 1_250_000 → "1.3M"; junk → "0". */

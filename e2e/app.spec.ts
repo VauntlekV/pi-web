@@ -108,3 +108,98 @@ test("phone width has no horizontal scroll", async ({ page }) => {
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(overflow).toBeLessThanOrEqual(0);
 });
+
+test("thinking levels are named in English", async ({ page }) => {
+  await open(page);
+  const trigger = page.locator(".composer-trigger").last();
+  await expect(trigger).toHaveText(/^(off|minimal|low|medium|high|xhigh|max)$/);
+  await trigger.click();
+  await expect(page.getByRole("listbox", { name: "思考档位" }).getByRole("option").first()).toHaveText("off");
+});
+
+test("the slash command list follows ↑/↓ past its edge", async ({ page }) => {
+  const commands = Array.from({ length: 30 }, (_, index) => ({
+    name: `cmd-${String(index).padStart(2, "0")}`,
+    description: `command ${index}`,
+    source: "prompt",
+  }));
+  await page.route("**/api/sessions/*/commands", (route) => route.fulfill({ json: { commands } }));
+  await open(page);
+  // Commands load per session; start an empty one of our own.
+  const { defaultCwd } = (await (await page.request.get("/api/config")).json()) as { defaultCwd: string };
+  const created = (await (await page.request.post("/api/sessions", { data: { cwd: defaultCwd } })).json()) as { state: { id: string } };
+  await page.goto(`/s/${created.state.id}`);
+
+  const input = page.getByRole("textbox", { name: "消息输入" });
+  await input.fill("/cmd");
+  const list = page.getByRole("listbox", { name: "命令" });
+  await expect(list.getByRole("option")).toHaveCount(30);
+
+  const inView = async (name: string) => {
+    const row = await list.getByRole("option", { name: new RegExp(name) }).boundingBox();
+    const box = await list.boundingBox();
+    return Boolean(row && box && row.y >= box.y - 1 && row.y + row.height <= box.y + box.height + 1);
+  };
+  // ↑ from the first row wraps to the last one, far below the fold.
+  await input.press("ArrowUp");
+  await expect.poll(() => inView("cmd-29")).toBe(true);
+  // ↓ wraps back to the top.
+  await input.press("ArrowDown");
+  await expect.poll(() => inView("cmd-00")).toBe(true);
+  for (let step = 0; step < 15; step++) await input.press("ArrowDown");
+  await expect.poll(() => inView("cmd-15")).toBe(true);
+  await input.fill("");
+});
+
+async function openModelSettings(page: Page) {
+  await open(page);
+  await page.locator(".sidebar").getByText("pi", { exact: true }).last().click();
+  await page.getByRole("menuitem", { name: /设置/ }).click();
+  await page.getByRole("button", { name: "模型", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "模型" })).toBeVisible();
+}
+
+test("model editor: override a built-in model, then revert", async ({ page }) => {
+  await openModelSettings(page);
+  await page.getByRole("button", { name: "编辑", exact: true }).first().click();
+  const row = page.locator(".provider-model", { hasText: "demo-coder" });
+  await expect(row).toContainText("200K");
+
+  await page.getByRole("button", { name: "编辑 Demo Coder" }).click();
+  await page.getByRole("textbox", { name: "上下文窗口" }).fill("300000");
+  await page.getByRole("textbox", { name: "输入价格" }).fill("1.5");
+  await page.getByRole("button", { name: "保存", exact: true }).click();
+  await expect(row).toContainText("300K");
+  await expect(row).toContainText("已修改");
+
+  await page.getByRole("button", { name: "编辑 Demo Coder" }).click();
+  await expect(page.getByRole("textbox", { name: "输入价格" })).toHaveValue("1.5");
+  await page.getByRole("button", { name: "还原默认" }).click();
+  await expect(row).toContainText("200K");
+  await expect(row).not.toContainText("已修改");
+});
+
+test("model editor: create a custom provider, add a model, delete it", async ({ page }) => {
+  await openModelSettings(page);
+  await page.getByRole("button", { name: "添加模型提供商" }).click();
+  await page.getByRole("button", { name: /自定义提供商/ }).click();
+  await page.getByRole("textbox", { name: "提供商 ID" }).fill("local");
+  await page.getByRole("textbox", { name: "Base URL" }).fill("http://127.0.0.1:9/v1");
+  await page.getByRole("button", { name: "创建" }).click();
+
+  const card = page.locator(".provider-card", { hasText: "自定义" });
+  await expect(card.locator(".provider-name").first()).toHaveText("local");
+  await card.getByRole("button", { name: "手动添加模型" }).click();
+  await card.getByRole("textbox", { name: "新模型 ID" }).fill("qwen3-coder");
+  await card.getByRole("button", { name: "添加", exact: true }).click();
+  await expect(card.locator(".provider-model", { hasText: "qwen3-coder" })).toBeVisible();
+
+  // Nothing listens on port 9: discovery reports the failure instead of hanging.
+  await card.getByRole("button", { name: "从接口获取模型" }).click();
+  await expect(card.getByRole("alert")).toContainText("127.0.0.1:9");
+  await card.getByRole("button", { name: "关闭" }).click();
+
+  await card.getByRole("button", { name: "删除提供商" }).click();
+  await card.getByRole("button", { name: "确认删除" }).click();
+  await expect(page.locator(".provider-card", { hasText: "自定义" })).toHaveCount(0);
+});

@@ -7,7 +7,7 @@ import { Hono, type Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { streamSSE } from "hono/streaming";
 import { ModelRuntime, SettingsManager, VERSION } from "@earendil-works/pi-coding-agent";
-import type { Model } from "@earendil-works/pi-ai";
+import type { Model, Provider } from "@earendil-works/pi-ai";
 import type {
   ConfigResponse,
   CreateSessionRequest,
@@ -35,6 +35,8 @@ export interface AppDeps {
   piVersion?: string;
   settingsManager?: SettingsManager;
   modelRuntime?: ModelRuntime;
+  /** Providers registered in code (faux providers in tests and the demo); models.json drafts load them too. */
+  nativeProviders?: Provider[];
   /** Absolute path to the built web app (`dist/web`); mounted when it exists. */
   staticDir?: string;
 }
@@ -308,6 +310,16 @@ export function toModelInfo(model: Model<string>): ModelInfo {
     contextWindow: model.contextWindow,
     maxTokens: model.maxTokens,
     vision: model.input.includes("image"),
+    ...(model.cost
+      ? {
+          cost: {
+            input: model.cost.input,
+            output: model.cost.output,
+            cacheRead: model.cost.cacheRead,
+            cacheWrite: model.cost.cacheWrite,
+          },
+        }
+      : {}),
   };
 }
 

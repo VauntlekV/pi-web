@@ -161,6 +161,8 @@ export interface ModelInfo {
   maxTokens: number;
   /** Accepts image input */
   vision: boolean;
+  /** USD per million tokens, when the catalog knows it */
+  cost?: ModelCost;
 }
 
 export interface ModelRef {
@@ -515,6 +517,14 @@ export interface GitRef {
  * PUT   /api/default-model  ModelRef & { thinkingLevel? } -> ProvidersView
  * PUT   /api/enabled-models { patterns: string[] | null } -> ProvidersView   (null = all models)
  *
+ * GET   /api/models-config                    -> ModelsConfigView   (~/.pi/agent/models.json)
+ * PUT   /api/models-config  { config }        -> ModelsConfigSaved  (400 with pi's message when the config does not load)
+ * POST  /api/models-config/discover { config, provider } -> ModelDiscoveryResult
+ *       lists the provider's models from its /models endpoint; auth, baseUrl and api resolve
+ *       from the draft `config` exactly as pi would
+ * POST  /api/models-config/test { config, provider, model } -> ModelTestResult
+ *       one tiny request ("Reply with OK only.") through the draft config
+ *
  * GET   /api/resources?cwd=                   -> ResourcesView
  * POST  /api/resources/toggle  ResourceToggleRequest -> ResourcesView
  * POST  /api/packages/install  { source, local?, cwd? } -> PackageOpResult   (waits; up to 10 min)
@@ -563,6 +573,97 @@ export interface ProviderView {
   /** environment variables pi reads for this provider's key */
   envVars: string[];
   models: ModelInfo[];
+}
+
+/** Per-million-token prices in USD. */
+export interface ModelCost {
+  input: number;
+  output: number;
+  cacheRead: number;
+  cacheWrite: number;
+}
+
+/**
+ * models.json, typed for the fields the editor touches. Index signatures keep
+ * everything else (tiers, inputLimits, samplingParams, …) intact on a round trip.
+ */
+/** A `modelOverrides` value: fields that replace a built-in model's (objects merge field by field). */
+export interface ModelsJsonOverride {
+  name?: string;
+  reasoning?: boolean;
+  /** provider value per thinking level; null = unsupported */
+  thinkingLevelMap?: Record<string, string | null>;
+  input?: ("text" | "image")[];
+  contextWindow?: number;
+  maxTokens?: number;
+  cost?: Partial<ModelCost> & Record<string, unknown>;
+  headers?: Record<string, string>;
+  compat?: Record<string, unknown>;
+  [field: string]: unknown;
+}
+
+/** A `models` entry: adds a model to the provider (or replaces the one with that id). */
+export interface ModelsJsonModel extends ModelsJsonOverride {
+  id: string;
+  api?: string;
+  baseUrl?: string;
+}
+
+export interface ModelsJsonProvider {
+  name?: string;
+  baseUrl?: string;
+  /** literal key, "$ENV_NAME" or "!command" */
+  apiKey?: string;
+  api?: string;
+  headers?: Record<string, string>;
+  compat?: Record<string, unknown>;
+  models?: ModelsJsonModel[];
+  modelOverrides?: Record<string, ModelsJsonOverride>;
+  [field: string]: unknown;
+}
+
+export interface ModelsJson {
+  providers?: Record<string, ModelsJsonProvider>;
+  [field: string]: unknown;
+}
+
+export interface ModelsConfigView {
+  /** absolute path of models.json */
+  path: string;
+  /** the parsed file ({} when it does not exist) */
+  config: ModelsJson;
+  /** set when the file is not valid JSON; `text` then holds it verbatim */
+  error?: string;
+  text?: string;
+  /** provider ids pi knows without models.json; any other id is a custom provider */
+  builtinProviders: string[];
+}
+
+export interface ModelsConfigSaved {
+  config: ModelsConfigView;
+  providers: ProvidersView;
+}
+
+export interface DiscoveredModel {
+  id: string;
+  name?: string;
+  reasoning?: boolean;
+  contextWindow?: number;
+  maxTokens?: number;
+}
+
+export interface ModelDiscoveryResult {
+  /** the URL that was listed */
+  endpoint: string;
+  models: DiscoveredModel[];
+}
+
+export interface ModelTestResult {
+  ok: boolean;
+  latencyMs?: number;
+  /** the model's reply (first 300 chars) */
+  text?: string;
+  error?: string;
 }
 
 export interface ProvidersView {
