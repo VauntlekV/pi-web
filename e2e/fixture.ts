@@ -105,6 +105,10 @@ async function createWorkspace(cwd: string): Promise<void> {
   );
   await write("src/todos.js", "const todos = [];\n\nexport function listTodos() {\n  return todos;\n}\n");
   git("init", "-q", "-b", "main");
+  // Commits made through the app use the repo's own identity (CI has no global one).
+  git("config", "user.name", identity.GIT_AUTHOR_NAME);
+  git("config", "user.email", identity.GIT_AUTHOR_EMAIL);
+  git("config", "commit.gpgsign", "false");
   commit("init todo api");
 
   git("checkout", "-q", "-b", "feature/list-view");
