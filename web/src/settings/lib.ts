@@ -10,19 +10,7 @@ import type {
 
 export const THINKING_LEVELS: ThinkingLevel[] = ["off", "minimal", "low", "medium", "high", "xhigh", "max"];
 
-const THINKING_LABELS: Record<ThinkingLevel, string> = {
-  off: "关闭",
-  minimal: "极简",
-  low: "低",
-  medium: "中",
-  high: "高",
-  xhigh: "超高",
-  max: "最大",
-};
-
-export function thinkingLabel(level: ThinkingLevel): string {
-  return THINKING_LABELS[level] ?? level;
-}
+export { thinkingLabel } from "../composer/lib.ts";
 
 export function authSourceLabel(source: ProviderView["authSource"]): string {
   switch (source) {

@@ -239,6 +239,7 @@ export function Composer(props: ComposerProps) {
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const completionRef = useRef<HTMLDivElement>(null);
   const draftRef = useRef({ text, images });
   draftRef.current = { text, images };
   const submittingRef = useRef(false);
@@ -288,6 +289,13 @@ export function Composer(props: ComposerProps) {
   useEffect(() => {
     setActiveIndex(0);
   }, [trigger?.kind, trigger?.query]);
+
+  // Keep the highlighted row visible while ↑/↓ walk past the list's edge.
+  const completionOpen = completion !== null;
+  useEffect(() => {
+    if (!completionOpen || active < 0) return;
+    completionRef.current?.querySelector<HTMLElement>('[data-active="true"]')?.scrollIntoView({ block: "nearest" });
+  }, [active, completionOpen]);
 
   useEffect(() => {
     if (mentionQuery === null) return;
@@ -727,7 +735,7 @@ export function Composer(props: ComposerProps) {
         </div>
 
         {completion && (
-          <div className="composer-completion" role="listbox" aria-label={completion.kind === "slash" ? "命令" : "文件"}>
+          <div ref={completionRef} className="composer-completion" role="listbox" aria-label={completion.kind === "slash" ? "命令" : "文件"}>
             {completion.kind === "slash"
               ? completion.items.map((command, index) => (
                   <div

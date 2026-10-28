@@ -103,6 +103,7 @@ await api.gitMessage(cwd, null);
 await api.settings();
 await api.settingsFile();
 await api.providers();
+await api.modelsConfig();
 await api.resources();
 await api.resources(cwd);
 for (const range of ["all", "30d", "7d"] as const) await api.stats(range);

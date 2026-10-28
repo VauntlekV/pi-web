@@ -182,6 +182,7 @@ export async function createFixture(options: { noAuth?: boolean } = {}): Promise
   const app = createApp({
     registry,
     modelRuntime,
+    nativeProviders: [faux.provider],
     settingsManager: settings(),
     auth: { token: E2E_TOKEN, noAuth: options.noAuth ?? false },
     defaultCwd: cwd,

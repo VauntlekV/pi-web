@@ -109,6 +109,11 @@ export class SessionRegistry {
     return reviving;
   }
 
+  /** Every live (not disposed) session. */
+  liveSessions(): LiveSession[] {
+    return [...this.live.values()].filter((live) => !live.isDisposed);
+  }
+
   /** The live session, without reviving one from disk. */
   peek(id: string): LiveSession | undefined {
     const live = this.live.get(id);

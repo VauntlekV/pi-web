@@ -169,14 +169,11 @@ describe("clearAfterSubmit", () => {
 });
 
 describe("labels", () => {
-  it("names every thinking level in Chinese", () => {
-    expect(thinkingLabel("off")).toBe("关闭");
-    expect(thinkingLabel("minimal")).toBe("极简");
-    expect(thinkingLabel("low")).toBe("低");
-    expect(thinkingLabel("medium")).toBe("中");
-    expect(thinkingLabel("high")).toBe("高");
-    expect(thinkingLabel("xhigh")).toBe("超高");
-    expect(thinkingLabel("max")).toBe("最大");
+  it("names thinking levels in English", () => {
+    expect(thinkingLabel("off")).toBe("off");
+    expect(thinkingLabel("minimal")).toBe("minimal");
+    expect(thinkingLabel("xhigh")).toBe("xhigh");
+    expect(thinkingLabel("max")).toBe("max");
   });
 });
 

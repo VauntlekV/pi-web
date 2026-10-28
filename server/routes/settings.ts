@@ -14,6 +14,8 @@ import { readResources, toggleResource } from "../settings/resources.ts";
 import { patchSettings, readSettingsFile, readSettingsView } from "../settings/settings.ts";
 import { readUsageStats } from "../settings/stats.ts";
 import { parseUiState, readUiState, saveUiState } from "../settings/ui-state.ts";
+import { lookupModelCatalog } from "../settings/model-catalog.ts";
+import { discoverModels, readModelsConfig, saveModelsConfig, testModel } from "../settings/models-config.ts";
 
 export function registerSettingsRoutes(app: Hono, deps: AppDeps): void {
   // ---------------------------------------------------------------- settings
@@ -27,6 +29,13 @@ export function registerSettingsRoutes(app: Hono, deps: AppDeps): void {
   app.delete("/api/providers/:id/key", async (c) => c.json(await clearProviderKey(deps, c.req.param("id"))));
   app.put("/api/default-model", async (c) => c.json(await setDefaultModel(deps, await jsonBody(c))));
   app.put("/api/enabled-models", async (c) => c.json(await setEnabledModels(deps, await jsonBody(c))));
+  app.get("/api/models-config", async (c) => c.json(await readModelsConfig(deps)));
+  app.put("/api/models-config", async (c) => c.json(await saveModelsConfig(deps, await jsonBody(c))));
+  app.post("/api/models-config/discover", async (c) => c.json(await discoverModels(deps, await jsonBody(c))));
+  app.post("/api/models-config/test", async (c) => c.json(await testModel(deps, await jsonBody(c))));
+  app.get("/api/models-catalog", async (c) =>
+    c.json(await lookupModelCatalog({ model: c.req.query("model"), provider: c.req.query("provider"), baseUrl: c.req.query("baseUrl") })),
+  );
 
   // --------------------------------------------------------------- resources
   app.get("/api/resources", async (c) => c.json(await readResources(deps, c.req.query("cwd"))));

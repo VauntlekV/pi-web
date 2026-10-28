@@ -26,6 +26,12 @@ import type {
   UsageStats,
   ModelRef,
   ModelsResponse,
+  ModelCatalogMatch,
+  ModelDiscoveryResult,
+  ModelsConfigSaved,
+  ModelsConfigView,
+  ModelsJson,
+  ModelTestResult,
   PromptRequest,
   SessionState,
   ThinkingLevel,
@@ -144,6 +150,17 @@ export const api = {
     request<ProvidersView>("PUT", "/api/default-model", ref),
   setEnabledModels: (patterns: string[] | null) =>
     request<ProvidersView>("PUT", "/api/enabled-models", { patterns }),
+  modelsConfig: () => request<ModelsConfigView>("GET", "/api/models-config"),
+  saveModelsConfig: (config: ModelsJson) => request<ModelsConfigSaved>("PUT", "/api/models-config", { config }),
+  discoverModels: (config: ModelsJson, provider: string) =>
+    request<ModelDiscoveryResult>("POST", "/api/models-config/discover", { config, provider }),
+  testModel: (config: ModelsJson, provider: string, model: string) =>
+    request<ModelTestResult>("POST", "/api/models-config/test", { config, provider, model }),
+  modelCatalog: (model: string, provider: string, baseUrl?: string) =>
+    request<ModelCatalogMatch>(
+      "GET",
+      `/api/models-catalog?model=${enc(model)}&provider=${enc(provider)}${baseUrl ? `&baseUrl=${enc(baseUrl)}` : ""}`,
+    ),
   resources: (cwd?: string) => request<ResourcesView>("GET", `/api/resources${cwd ? `?cwd=${enc(cwd)}` : ""}`),
   toggleResource: (req: ResourceToggleRequest) => request<ResourcesView>("POST", "/api/resources/toggle", req),
   installPackage: (source: string, opts: { local?: boolean; cwd?: string } = {}) =>

@@ -50,12 +50,8 @@ describe("toggleEnabledModel", () => {
 });
 
 describe("thinkingLabel", () => {
-  it("uses the Chinese labels", () => {
-    expect(thinkingLabel("off")).toBe("关闭");
-    expect(thinkingLabel("minimal")).toBe("极简");
-    expect(thinkingLabel("medium")).toBe("中");
-    expect(thinkingLabel("xhigh")).toBe("超高");
-    expect(thinkingLabel("max")).toBe("最大");
+  it("is the same English name as in the composer", () => {
+    expect(thinkingLabel("medium")).toBe("medium");
   });
 });
 
