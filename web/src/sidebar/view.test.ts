@@ -7,6 +7,7 @@ import {
   searchSessions,
   sessionTitle,
   sortSessions,
+  visibleGroups,
 } from "./view.ts";
 
 function session(overrides: Partial<SessionSummary>): SessionSummary {
@@ -88,5 +89,33 @@ describe("view filters", () => {
   it("sorts by title when asked", () => {
     expect(sortSessions(sessions, { sort: "name", show: "active" }).map((s) => s.id)).toEqual(["b", "a"]);
     expect(sortSessions(sessions, DEFAULT_SIDEBAR_VIEW).map((s) => s.id)).toEqual(["a", "b"]);
+  });
+});
+
+describe("visibleGroups", () => {
+  const session = (id: string): SessionSummary =>
+    ({ id, path: "", cwd: "/w", firstMessage: id, messageCount: 1, created: "", modified: "" }) as SessionSummary;
+  const workspace = (cwd: string, ids: string[], archived = false): Workspace => ({
+    cwd,
+    label: cwd,
+    sessions: ids.map(session),
+    lastActive: "",
+    ...(archived ? { archived: true } : {}),
+  });
+  const list = [workspace("/new", []), workspace("/main", ["a", "b"]), workspace("/old", ["c"], true)];
+  const shape = (groups: ReturnType<typeof visibleGroups>) => groups.map((group) => [group.workspace.cwd, group.sessions.map((s) => s.id)]);
+
+  it("shows unarchived workspaces, empty ones included, without archived sessions", () => {
+    expect(shape(visibleGroups(list, ["b"], { sort: "recent", show: "active" }))).toEqual([
+      ["/new", []],
+      ["/main", ["a"]],
+    ]);
+  });
+
+  it("shows archived workspaces whole, and others only for their archived sessions", () => {
+    expect(shape(visibleGroups(list, ["b"], { sort: "recent", show: "archived" }))).toEqual([
+      ["/main", ["b"]],
+      ["/old", ["c"]],
+    ]);
   });
 });

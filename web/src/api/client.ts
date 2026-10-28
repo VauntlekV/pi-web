@@ -86,6 +86,12 @@ export const api = {
   // global
   config: () => request<ConfigResponse>("GET", "/api/config"),
   workspaces: () => request<{ workspaces: Workspace[] }>("GET", "/api/workspaces"),
+  addWorkspace: (cwd: string) => request<{ workspaces: Workspace[] }>("POST", "/api/workspaces", { cwd }),
+  archiveWorkspace: (cwd: string, archived: boolean) =>
+    request<{ workspaces: Workspace[] }>("PATCH", "/api/workspaces", { cwd, archived }),
+  /** Also deletes the workspace's session files (pi's own records). */
+  deleteWorkspace: (cwd: string) =>
+    request<{ workspaces: Workspace[]; deleted: number }>("DELETE", `/api/workspaces?cwd=${enc(cwd)}`),
   models: (sessionId?: string) =>
     request<ModelsResponse>("GET", `/api/models${sessionId ? `?sessionId=${enc(sessionId)}` : ""}`),
   listDirs: (path?: string) => request<FsListResponse>("GET", `/api/fs/list${path ? `?path=${enc(path)}` : ""}`),

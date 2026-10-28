@@ -61,3 +61,29 @@ export function sortSessions(sessions: SessionSummary[], view: SidebarView): Ses
   if (view.sort !== "name") return sessions;
   return [...sessions].sort((a, b) => sessionTitle(a).localeCompare(sessionTitle(b), "zh"));
 }
+
+export interface WorkspaceGroup {
+  workspace: Workspace;
+  sessions: SessionSummary[];
+}
+
+/**
+ * The workspace groups a view shows. 进行中: workspaces that are not archived,
+ * each with its unarchived sessions (empty ones too, so a freshly added folder
+ * is visible). 已归档: archived workspaces with all their sessions, plus other
+ * workspaces that hold archived sessions.
+ */
+export function visibleGroups(workspaces: Workspace[], archived: string[], view: SidebarView): WorkspaceGroup[] {
+  const groups: WorkspaceGroup[] = [];
+  for (const workspace of workspaces) {
+    if (view.show === "active") {
+      if (!workspace.archived) groups.push({ workspace, sessions: sortSessions(filterByView(workspace.sessions, archived, view), view) });
+    } else if (workspace.archived) {
+      groups.push({ workspace, sessions: sortSessions(workspace.sessions, view) });
+    } else {
+      const sessions = filterByView(workspace.sessions, archived, view);
+      if (sessions.length > 0) groups.push({ workspace, sessions: sortSessions(sessions, view) });
+    }
+  }
+  return groups;
+}

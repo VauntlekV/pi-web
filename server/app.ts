@@ -23,8 +23,10 @@ import { listDirectories, listFiles } from "./fs.ts";
 import { HttpError, jsonBody } from "./http-error.ts";
 import type { SessionRegistry } from "./registry.ts";
 import { registerFilesGitRoutes } from "./routes/files-git.ts";
+import { registerWorkspaceRoutes } from "./routes/workspaces.ts";
 import { registerSettingsRoutes } from "./routes/settings.ts";
 import { getGlobalRuntime } from "./settings/runtime-cache.ts";
+import { workspaceStore } from "./workspaces.ts";
 
 export interface AppDeps {
   registry: SessionRegistry;
@@ -85,7 +87,6 @@ export function createApp(deps: AppDeps): Hono {
     return c.json(response);
   });
 
-  app.get("/api/workspaces", async (c) => c.json({ workspaces: await deps.registry.listWorkspaces() }));
 
   app.get("/api/models", async (c) => {
     const sessionId = c.req.query("sessionId");
@@ -139,6 +140,8 @@ export function createApp(deps: AppDeps): Hono {
       request.thinkingLevel = body.thinkingLevel as ThinkingLevel;
     }
     const live = await deps.registry.create(request);
+    // Starting a session in a folder adds it to the sidebar (or brings it back from the archive).
+    await workspaceStore(deps.agentDir).add(live.getState().cwd);
     return c.json({ state: live.getState() });
   });
 
@@ -265,6 +268,7 @@ export function createApp(deps: AppDeps): Hono {
   });
 
   registerFilesGitRoutes(app, deps);
+  registerWorkspaceRoutes(app, deps);
   registerSettingsRoutes(app, deps);
 
   // ------------------------------------------------------------------- static

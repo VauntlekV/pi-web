@@ -192,7 +192,10 @@ describe("sessions", () => {
       harness.faux.setResponses([fauxAssistantMessage([fauxText("two")])]);
       await promptAndSettle(harness, second, "second");
 
-      const workspaces = await harness.registry.listWorkspaces();
+      const workspaces = await harness.registry.listWorkspaces([
+        { cwd: harness.cwd, added: new Date(0).toISOString() },
+        { cwd: otherCwd, added: new Date(0).toISOString() },
+      ]);
       expect(workspaces).toHaveLength(2);
       expect(workspaces[0]?.cwd).toBe(otherCwd);
       expect(workspaces[0]?.label).toBe(basename(otherCwd));

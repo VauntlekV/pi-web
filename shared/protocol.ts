@@ -198,8 +198,10 @@ export interface Workspace {
   label: string;
   /** newest first */
   sessions: SessionSummary[];
-  /** ISO 8601, max(sessions.modified) */
+  /** ISO 8601: the newest session's modified time, or when the folder was added */
   lastActive: string;
+  /** hidden from the sidebar's default view; its sessions stay on disk */
+  archived?: boolean;
 }
 
 export interface ContextUsage {
@@ -329,6 +331,12 @@ export interface ApiError {
  *
  * GET    /api/config                         -> ConfigResponse
  * GET    /api/workspaces                     -> { workspaces: Workspace[] }   (newest workspace first)
+ *        only folders added to pi-web (~/.pi/agent/pi-web/workspaces.json); sessions of other
+ *        directories are not listed. POST /api/sessions adds its cwd (or unarchives it).
+ * POST   /api/workspaces { cwd }             -> { workspaces }   (400 when cwd is not a directory)
+ * PATCH  /api/workspaces { cwd, archived }   -> { workspaces }   (archived: hidden, sessions kept)
+ * DELETE /api/workspaces?cwd=                -> { workspaces, deleted }
+ *        removes the folder AND deletes its session files; 409 while one of them runs
  * GET    /api/models[?sessionId=]            -> ModelsResponse
  * GET    /api/fs/list?path=                  -> FsListResponse  (directories only, for the cwd picker; path defaults to home)
  * GET    /api/fs/files?cwd=&q=               -> { files: string[] }  (relative paths for @-mention, max 50, git-ignored skipped)
