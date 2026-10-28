@@ -5,9 +5,16 @@
  * ./model-config-lib.ts and hands it to `onSave`, which writes it (the server
  * has pi validate it first) and throws a readable message on failure.
  */
-import { Check, ChevronRight, Eye, EyeOff, Plus, RefreshCw, Search, X } from "lucide-react";
+import { Check, ChevronRight, Eye, EyeOff, Plus, RefreshCw, Search, Sparkles, X } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import type { DiscoveredModel, ModelInfo, ModelsConfigView, ModelsJson, ModelTestResult } from "../../../shared/protocol.ts";
+import type {
+  DiscoveredModel,
+  ModelCatalogMatch,
+  ModelInfo,
+  ModelsConfigView,
+  ModelsJson,
+  ModelTestResult,
+} from "../../../shared/protocol.ts";
 import { api } from "../api/client.ts";
 import { Button } from "../ui/button.tsx";
 import { Select, Spinner } from "./controls.tsx";
@@ -17,6 +24,7 @@ import {
   COST_KEYS,
   MAPPABLE_LEVELS,
   addModels,
+  applyCatalogPreset,
   applyModelDraft,
   applyProviderDraft,
   hasOverride,
@@ -172,6 +180,27 @@ export function ModelEditor({
     });
   };
 
+  const [catalog, setCatalog] = useState<{ match: ModelCatalogMatch; filled: string[]; differing: string[] } | "loading" | { error: string } | null>(null);
+  const [beforeFill, setBeforeFill] = useState<ModelDraft | null>(null);
+
+  const fillFromCatalog = async (overwrite: boolean) => {
+    const id = (source === "entry" ? draft.id : modelId).trim();
+    const entry = config.providers?.[providerId];
+    const baseUrl = entry?.models?.find((model) => model.id === modelId)?.baseUrl ?? entry?.baseUrl;
+    setCatalog("loading");
+    try {
+      const match = await api.modelCatalog(id, providerId, baseUrl);
+      const result = applyCatalogPreset(draft, match.preset, overwrite);
+      if (result.filled.length > 0) {
+        setBeforeFill(draft);
+        setDraft(result.draft);
+      }
+      setCatalog({ match, filled: result.filled, differing: result.differing });
+    } catch (cause) {
+      setCatalog({ error: errorText(cause) });
+    }
+  };
+
   const runTest = async () => {
     const next = build();
     if (!next) return;
@@ -185,6 +214,26 @@ export function ModelEditor({
 
   return (
     <div className="mc-form" role="group" aria-label={`编辑 ${modelId}`}>
+      <div className="mc-catalog">
+        <Button disabled={catalog === "loading"} onClick={() => void fillFromCatalog(false)}>
+          {catalog === "loading" ? <Spinner /> : <Sparkles size={14} aria-hidden="true" />}
+          从 models.dev 填充
+        </Button>
+        {beforeFill && (
+          <button
+            type="button"
+            className="settings-text-btn"
+            onClick={() => {
+              setDraft(beforeFill);
+              setBeforeFill(null);
+              setCatalog(null);
+            }}
+          >
+            撤销
+          </button>
+        )}
+        {catalog && catalog !== "loading" && <CatalogSummary result={catalog} onOverwrite={() => void fillFromCatalog(true)} />}
+      </div>
       <div className="mc-grid">
         {source === "entry" ? (
           <Field label="模型 ID" hint="发送给接口的模型名">
@@ -300,6 +349,48 @@ export function ModelEditor({
         </p>
       )}
     </div>
+  );
+}
+
+const PRICE_NOTES = {
+  "no-match": "",
+  "no-price": "models.dev 没有它的价格",
+  single: "只有一家第三方列出价格，未填写",
+  conflict: "各家价格不一致，未填写",
+} as const;
+
+/** What a models.dev lookup did, where the numbers came from, and how to apply the rest. */
+function CatalogSummary({
+  result,
+  onOverwrite,
+}: {
+  result: { match: ModelCatalogMatch; filled: string[]; differing: string[] } | { error: string };
+  onOverwrite: () => void;
+}) {
+  if ("error" in result) return <span className="mc-catalog-note is-error">{result.error}</span>;
+  const { match, filled, differing } = result;
+  if (match.matches === 0) return <span className="mc-catalog-note">models.dev 里没有这个模型 ID</span>;
+
+  const origin =
+    match.matchedBy === "consensus"
+      ? `${match.matches} 家提供商列出了它，取多数一致的值`
+      : `数据来自 ${match.providerName ?? "同一提供商"}`;
+  const price = match.price.reliable
+    ? match.price.by === "consensus"
+      ? `价格 ${match.price.support}/${match.price.total} 家一致`
+      : ""
+    : PRICE_NOTES[match.price.reason];
+  const done = filled.length > 0 ? `已填充${filled.join("、")}` : differing.length > 0 ? "表单已有值，未改动" : "表单已与 models.dev 一致";
+
+  return (
+    <span className="mc-catalog-note" role="status">
+      {[done, origin, price].filter(Boolean).join(" · ")}
+      {differing.length > 0 && (
+        <button type="button" className="settings-text-btn" onClick={onOverwrite}>
+          也覆盖{differing.join("、")}
+        </button>
+      )}
+    </span>
   );
 }
 

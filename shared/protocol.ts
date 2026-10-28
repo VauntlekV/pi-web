@@ -524,6 +524,8 @@ export interface GitRef {
  *       from the draft `config` exactly as pi would
  * POST  /api/models-config/test { config, provider, model } -> ModelTestResult
  *       one tiny request ("Reply with OK only.") through the draft config
+ * GET   /api/models-catalog?model=&provider=&baseUrl= -> ModelCatalogMatch
+ *       what models.dev knows about the model id (cached for an hour; 502 when unreachable)
  *
  * GET   /api/resources?cwd=                   -> ResourcesView
  * POST  /api/resources/toggle  ResourceToggleRequest -> ResourcesView
@@ -664,6 +666,46 @@ export interface ModelTestResult {
   /** the model's reply (first 300 chars) */
   text?: string;
   error?: string;
+}
+
+/** Model fields from models.dev, in the editor's terms. */
+export interface CatalogPreset {
+  name?: string;
+  reasoning?: boolean;
+  image?: boolean;
+  contextWindow?: number;
+  maxTokens?: number;
+  /** only when the price is reliable */
+  cost?: ModelCost;
+}
+
+export type CatalogPrice =
+  | {
+      reliable: true;
+      /** the same provider (by id or base URL host) listed it, or most listings agree */
+      by: "provider" | "base-url" | "consensus";
+      providerName?: string;
+      /** listings with this price / listings with any price */
+      support: number;
+      total: number;
+    }
+  | {
+      reliable: false;
+      reason: "no-match" | "no-price" | "single" | "conflict";
+      support: number;
+      total: number;
+    };
+
+export interface ModelCatalogMatch {
+  /** the catalog URL */
+  source: string;
+  /** catalog listings with exactly this model id (across providers) */
+  matches: number;
+  /** where the metadata came from */
+  matchedBy: "provider" | "base-url" | "consensus" | "none";
+  providerName?: string;
+  preset: CatalogPreset;
+  price: CatalogPrice;
 }
 
 export interface ProvidersView {

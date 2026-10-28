@@ -118,11 +118,14 @@ test("thinking levels are named in English", async ({ page }) => {
 });
 
 test("the slash command list follows ↑/↓ past its edge", async ({ page }) => {
-  const commands = Array.from({ length: 30 }, (_, index) => ({
-    name: `cmd-${String(index).padStart(2, "0")}`,
-    description: `command ${index}`,
-    source: "prompt",
-  }));
+  const commands = [
+    ...Array.from({ length: 30 }, (_, index) => ({
+      name: `cmd-${String(index).padStart(2, "0")}`,
+      description: `command ${index}`,
+      source: "prompt",
+    })),
+    { name: "skill:ponytail-review", description: "Quality review of a change: is the logic right, is it safe, does it hold under real load".repeat(2), source: "skill" },
+  ];
   await page.route("**/api/sessions/*/commands", (route) => route.fulfill({ json: { commands } }));
   await open(page);
   // Commands load per session; start an empty one of our own.
@@ -148,6 +151,13 @@ test("the slash command list follows ↑/↓ past its edge", async ({ page }) =>
   await expect.poll(() => inView("cmd-00")).toBe(true);
   for (let step = 0; step < 15; step++) await input.press("ArrowDown");
   await expect.poll(() => inView("cmd-15")).toBe(true);
+
+  // A long skill name stays readable next to a long description, even on a phone.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await input.fill("/skill");
+  const name = list.locator(".composer-completion-name", { hasText: "ponytail-review" });
+  await expect(name).toBeVisible();
+  expect(await name.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
   await input.fill("");
 });
 
@@ -193,6 +203,18 @@ test("model editor: create a custom provider, add a model, delete it", async ({ 
   await card.getByRole("textbox", { name: "新模型 ID" }).fill("qwen3-coder");
   await card.getByRole("button", { name: "添加", exact: true }).click();
   await expect(card.locator(".provider-model", { hasText: "qwen3-coder" })).toBeVisible();
+
+  // models.dev fills the empty fields. "local" is not the listing provider and only
+  // one listing has a price, so the price is withheld as unreliable.
+  await card.getByRole("button", { name: "编辑 qwen3-coder" }).click();
+  await card.getByRole("button", { name: "从 models.dev 填充" }).click();
+  await expect(card.getByRole("status")).toContainText("已填充");
+  await expect(card.getByRole("status")).toContainText("只有一家第三方列出价格");
+  await expect(card.getByRole("textbox", { name: "上下文窗口" })).toHaveValue("262144");
+  await expect(card.getByRole("textbox", { name: "显示名称", exact: true })).toHaveValue("Qwen3 Coder");
+  await expect(card.getByRole("textbox", { name: "输出价格" })).toHaveValue("");
+  await card.getByRole("button", { name: "保存", exact: true }).click();
+  await expect(card.locator(".provider-model", { hasText: "Qwen3 Coder" })).toContainText("262K");
 
   // Nothing listens on port 9: discovery reports the failure instead of hanging.
   await card.getByRole("button", { name: "从接口获取模型" }).click();

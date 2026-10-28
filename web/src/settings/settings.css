@@ -702,6 +702,31 @@
   animation: ui-enter var(--dur-enter) var(--ease-out);
 }
 
+.mc-catalog {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  padding-bottom: 10px;
+  border-bottom: var(--hairline) solid var(--divider);
+}
+
+.mc-catalog-note {
+  display: inline-flex;
+  flex: 1 1 200px;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 8px;
+  min-width: 0;
+  color: var(--ink-3);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+}
+
+.mc-catalog-note.is-error {
+  color: var(--danger);
+}
+
 .mc-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

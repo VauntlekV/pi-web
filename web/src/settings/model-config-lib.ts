@@ -7,6 +7,7 @@
  * `providers[p].modelOverrides[id]`, which keeps only the fields that differ.
  */
 import type {
+  CatalogPreset,
   DiscoveredModel,
   ModelCost,
   ModelInfo,
@@ -79,11 +80,15 @@ export function compatText(compat: Record<string, unknown> | undefined): string 
   return compat && Object.keys(compat).length > 0 ? JSON.stringify(compat, null, 2) : "";
 }
 
-/** Form values for a model: the stored entry/override first, then what pi reports for it. */
-export function modelDraft(config: ModelsJson, providerId: string, modelId: string, info?: ModelInfo): ModelDraft {
-  const stored: ModelsJsonModel | ModelsJsonOverride | undefined =
-    provider(config, providerId).models?.find((model) => model.id === modelId) ??
-    provider(config, providerId).modelOverrides?.[modelId];
+/**
+ * Form values for a model. A models[] entry shows only what it stores (an
+ * empty field means pi's default); a built-in model shows its override on top
+ * of what pi reports for it.
+ */
+export function modelDraft(config: ModelsJson, providerId: string, modelId: string, builtin?: ModelInfo): ModelDraft {
+  const entry = provider(config, providerId).models?.find((model) => model.id === modelId);
+  const stored: ModelsJsonModel | ModelsJsonOverride | undefined = entry ?? provider(config, providerId).modelOverrides?.[modelId];
+  const info = entry ? undefined : builtin;
   const cost: Partial<ModelCost> = { ...info?.cost, ...stored?.cost };
   const thinking: Record<string, ThinkingRow> = {};
   for (const level of MAPPABLE_LEVELS) {
@@ -342,4 +347,53 @@ function pruneProvider(entry: ModelsJsonProvider): ModelsJsonProvider {
 
 export function hasOverride(config: ModelsJson, providerId: string, modelId: string): boolean {
   return provider(config, providerId).modelOverrides?.[modelId] !== undefined;
+}
+
+// ------------------------------------------------------------- models.dev
+
+export interface CatalogFill {
+  draft: ModelDraft;
+  /** labels of the fields that were filled */
+  filled: string[];
+  /** catalog values the form has different values for (left alone unless overwriting) */
+  differing: string[];
+}
+
+/**
+ * Put catalog values into the form: empty fields only, or with `overwrite`
+ * every field the catalog has. Checkboxes count as empty while unticked.
+ */
+export function applyCatalogPreset(draft: ModelDraft, preset: CatalogPreset, overwrite: boolean): CatalogFill {
+  const next: ModelDraft = { ...draft, cost: { ...draft.cost } };
+  const filled: string[] = [];
+  const differing: string[] = [];
+  const take = (label: string, empty: boolean, same: boolean, write: () => void) => {
+    if (same) return;
+    if (empty || overwrite) {
+      write();
+      filled.push(label);
+    } else {
+      differing.push(label);
+    }
+  };
+
+  if (preset.name) take("显示名称", !draft.name.trim(), draft.name.trim() === preset.name, () => (next.name = preset.name!));
+  if (preset.reasoning !== undefined) {
+    take("思考", !draft.reasoning, draft.reasoning === preset.reasoning, () => (next.reasoning = preset.reasoning!));
+  }
+  if (preset.image !== undefined) take("图片输入", !draft.image, draft.image === preset.image, () => (next.image = preset.image!));
+  for (const [key, label] of [["contextWindow", "上下文窗口"], ["maxTokens", "最大输出"]] as const) {
+    const value = preset[key];
+    if (value === undefined) continue;
+    take(label, !draft[key].trim(), Number(draft[key].replace(/[,_\s]/g, "")) === value, () => (next[key] = String(value)));
+  }
+  if (preset.cost) {
+    const cost = preset.cost;
+    const empty = COST_KEYS.every((key) => !draft.cost[key].trim());
+    const same = COST_KEYS.every((key) => Number(draft.cost[key] || 0) === cost[key]);
+    take("价格", empty, same, () => {
+      for (const key of COST_KEYS) next.cost[key] = String(cost[key]);
+    });
+  }
+  return { draft: next, filled, differing };
 }

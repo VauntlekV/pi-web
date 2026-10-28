@@ -370,9 +370,11 @@
   background: var(--hover-plate);
 }
 
+/* The name keeps its full width up to ~36 characters (65% of a narrow row);
+   the description gives way first. */
 .composer-completion-name {
-  flex: 0 1 auto;
-  min-width: 0;
+  flex: none;
+  max-width: min(36ch, 65%);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

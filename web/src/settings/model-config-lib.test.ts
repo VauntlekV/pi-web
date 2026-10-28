@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { ModelInfo, ModelsJson } from "../../../shared/protocol.ts";
 import {
   addModels,
+  applyCatalogPreset,
   applyModelDraft,
   applyProviderDraft,
   modelDraft,
@@ -109,5 +110,28 @@ describe("providers", () => {
     const next = addModels(custom, "local", [{ id: "qwen" }, { id: "llama", contextWindow: 8192, reasoning: true }]);
     expect(next.providers?.local.models?.map((model) => model.id)).toEqual(["qwen", "llama"]);
     expect(next.providers?.local.models?.[1]).toEqual({ id: "llama", reasoning: true, contextWindow: 8192 });
+  });
+});
+
+describe("models.dev fill", () => {
+  const preset = { name: "Qwen 3", reasoning: true, contextWindow: 262144, maxTokens: 32768, cost: { input: 0.3, output: 1.2, cacheRead: 0, cacheWrite: 0 } };
+
+  it("fills empty fields of a models[] entry and reports the ones it left alone", () => {
+    // The stored 32768 context window is kept; pi's defaults do not count as values.
+    const draft = modelDraft(custom, "local", "qwen", { ...builtin, id: "qwen" });
+    expect(draft.maxTokens).toBe("");
+    const result = applyCatalogPreset(draft, preset, false);
+    expect(result.filled).toEqual(["显示名称", "思考", "最大输出", "价格"]);
+    expect(result.differing).toEqual(["上下文窗口"]);
+    expect(result.draft).toMatchObject({ name: "Qwen 3", reasoning: true, contextWindow: "32768", maxTokens: "32768" });
+    expect(result.draft.cost).toEqual({ input: "0.3", output: "1.2", cacheRead: "0", cacheWrite: "0" });
+  });
+
+  it("overwrites everything the catalog has when asked, and skips equal values", () => {
+    const draft = modelDraft(custom, "local", "qwen");
+    const result = applyCatalogPreset({ ...draft, name: "Qwen 3" }, preset, true);
+    expect(result.filled).toEqual(["思考", "上下文窗口", "最大输出", "价格"]);
+    expect(result.draft.contextWindow).toBe("262144");
+    expect(applyCatalogPreset(result.draft, preset, false)).toMatchObject({ filled: [], differing: [] });
   });
 });

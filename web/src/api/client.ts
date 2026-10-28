@@ -26,6 +26,7 @@ import type {
   UsageStats,
   ModelRef,
   ModelsResponse,
+  ModelCatalogMatch,
   ModelDiscoveryResult,
   ModelsConfigSaved,
   ModelsConfigView,
@@ -155,6 +156,11 @@ export const api = {
     request<ModelDiscoveryResult>("POST", "/api/models-config/discover", { config, provider }),
   testModel: (config: ModelsJson, provider: string, model: string) =>
     request<ModelTestResult>("POST", "/api/models-config/test", { config, provider, model }),
+  modelCatalog: (model: string, provider: string, baseUrl?: string) =>
+    request<ModelCatalogMatch>(
+      "GET",
+      `/api/models-catalog?model=${enc(model)}&provider=${enc(provider)}${baseUrl ? `&baseUrl=${enc(baseUrl)}` : ""}`,
+    ),
   resources: (cwd?: string) => request<ResourcesView>("GET", `/api/resources${cwd ? `?cwd=${enc(cwd)}` : ""}`),
   toggleResource: (req: ResourceToggleRequest) => request<ResourcesView>("POST", "/api/resources/toggle", req),
   installPackage: (source: string, opts: { local?: boolean; cwd?: string } = {}) =>
