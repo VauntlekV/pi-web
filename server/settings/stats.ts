@@ -3,6 +3,7 @@ import { join } from "node:path";
 import type { UsageStats } from "../../shared/protocol.ts";
 import type { AppDeps } from "../app.ts";
 import { HttpError } from "../http-error.ts";
+import { workspaceKey, workspaceStore } from "../workspaces.ts";
 
 const RANGES: UsageStats["range"][] = ["all", "30d", "7d"];
 const DAILY_DAYS = 182;
@@ -20,6 +21,8 @@ interface DayBucket {
 interface FileStats {
   mtimeMs: number;
   size: number;
+  /** the session's working directory (from its header line) */
+  cwd?: string;
   days: Map<string, DayBucket>;
 }
 
@@ -36,7 +39,9 @@ export async function readUsageStats(deps: AppDeps, rangeParam: string | undefin
   if (!RANGES.includes(range)) throw new HttpError(400, "range 必须是 all、30d 或 7d");
 
   const sessionDir = deps.registry.sessionDir ?? join(deps.agentDir, "sessions");
-  const resultKey = `${sessionDir}\0${range}`;
+  // Only the workspaces pi-web lists count, like the sidebar.
+  const workspaces = new Set((await workspaceStore(deps.agentDir).list()).map((entry) => entry.cwd));
+  const resultKey = `${sessionDir}\0${range}\0${[...workspaces].join("\0")}`;
   const cached = resultCache.get(resultKey);
   if (cached && Date.now() - cached.at < RESULT_TTL_MS) return cached.value;
 
@@ -47,7 +52,8 @@ export async function readUsageStats(deps: AppDeps, rangeParam: string | undefin
   for (const path of paths) {
     seen.add(path);
     try {
-      files.push(await statsForFile(path));
+      const stats = await statsForFile(path);
+      if (stats.cwd !== undefined && workspaces.has(workspaceKey(stats.cwd))) files.push(stats);
     } catch {
       // A session file that vanished or cannot be read is skipped, like a bad line.
     }
@@ -138,9 +144,20 @@ async function statsForFile(path: string): Promise<FileStats> {
   if (cached && cached.mtimeMs === info.mtimeMs && cached.size === info.size) return cached;
 
   const text = await statsIo.readFile(path, "utf8");
-  const stats: FileStats = { mtimeMs: info.mtimeMs, size: info.size, days: parseSessionText(text) };
+  const stats: FileStats = { mtimeMs: info.mtimeMs, size: info.size, cwd: headerCwd(text), days: parseSessionText(text) };
   cache.set(path, stats);
   return stats;
+}
+
+/** The `cwd` of the session header (the first line). */
+function headerCwd(text: string): string | undefined {
+  const end = text.indexOf("\n");
+  try {
+    const header: unknown = JSON.parse(end === -1 ? text : text.slice(0, end));
+    return isRecord(header) && header.type === "session" && typeof header.cwd === "string" ? header.cwd : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 /** Count user/assistant messages per local day; bad lines are skipped silently. */

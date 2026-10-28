@@ -1,5 +1,8 @@
 // End-to-end checks against e2e/server.ts (faux model, throwaway workspace).
 // The tests share one server and one git workspace, so they run in order.
+import { mkdtemp } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { basename, join } from "node:path";
 import { expect, test, type Page } from "@playwright/test";
 import { E2E_ANSWER, E2E_COMMIT, E2E_COMMITS, E2E_PROMPT, E2E_TITLE, E2E_TOKEN } from "./constants.ts";
 
@@ -224,4 +227,47 @@ test("model editor: create a custom provider, add a model, delete it", async ({ 
   await card.getByRole("button", { name: "删除提供商" }).click();
   await card.getByRole("button", { name: "确认删除" }).click();
   await expect(page.locator(".provider-card", { hasText: "自定义" })).toHaveCount(0);
+});
+
+test("workspaces: only added folders are listed; archive hides, delete removes records", async ({ page }) => {
+  // A folder with no pi-web sessions yet, added through the picker.
+  const folder = await mkdtemp(join(tmpdir(), "pi-web-e2e-ws-"));
+  await open(page);
+  const sidebar = page.locator(".sidebar");
+  await sidebar.getByRole("button", { name: "添加工作区" }).first().click();
+  const path = page.getByRole("textbox", { name: "目录路径" });
+  await path.fill(folder);
+  await path.press("Enter");
+  await page.getByRole("button", { name: "选择此目录" }).click();
+  const added = sidebar.locator(".sb-group", { hasText: basename(folder) });
+  await expect(added).toBeVisible();
+
+  // Without sessions, deleting only takes it off the list.
+  await added.hover();
+  await added.getByRole("button", { name: "工作区菜单" }).click();
+  await page.getByRole("menuitem", { name: /删除工作区/ }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toContainText("还没有会话记录");
+  await dialog.getByRole("button", { name: "删除", exact: true }).click();
+  await expect(added).toHaveCount(0);
+
+  // With sessions, the dialog warns that records go too, and offers archiving instead.
+  const todo = sidebar.locator(".sb-group", { hasText: "todo-app" });
+  await todo.hover();
+  await todo.getByRole("button", { name: "工作区菜单" }).click();
+  await page.getByRole("menuitem", { name: /删除工作区/ }).click();
+  await expect(dialog).toContainText("永久删除");
+  await expect(dialog).toContainText("pi CLI 里也无法再打开");
+  await dialog.getByRole("button", { name: "改为归档" }).click();
+  await expect(todo).toHaveCount(0);
+
+  await sidebar.getByRole("button", { name: "视图选项" }).click();
+  await page.getByRole("menuitemradio", { name: "已归档" }).click();
+  await expect(todo).toContainText("已归档");
+  await todo.hover();
+  await todo.getByRole("button", { name: "工作区菜单" }).click();
+  await page.getByRole("menuitem", { name: "取消归档" }).click();
+  await sidebar.getByRole("button", { name: "视图选项" }).click();
+  await page.getByRole("menuitemradio", { name: "进行中" }).click();
+  await expect(todo).toBeVisible();
 });

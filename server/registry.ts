@@ -18,6 +18,7 @@ import {
 import type { CreateSessionRequest, SessionSummary, ThinkingLevel, Workspace } from "../shared/protocol.ts";
 import { HttpError } from "./http-error.ts";
 import { LiveSession, THINKING_LEVELS } from "./live-session.ts";
+import { workspaceKey, type StoredWorkspace } from "./workspaces.ts";
 
 type ResourceLoaderOptions = NonNullable<CreateAgentSessionServicesOptions["resourceLoaderOptions"]>;
 
@@ -138,8 +139,13 @@ export class SessionRegistry {
 
   // ---------------------------------------------------------------- workspaces
 
-  async listWorkspaces(): Promise<Workspace[]> {
-    const infos = await this.listInfos();
+  /**
+   * The given workspaces with their sessions (on disk and live-only), most
+   * recently active first. Sessions of other directories are left out.
+   */
+  async listWorkspaces(added: StoredWorkspace[]): Promise<Workspace[]> {
+    const wanted = new Map(added.map((entry) => [entry.cwd, entry]));
+    const infos = (await this.listInfos()).filter((info) => wanted.has(workspaceKey(info.cwd)));
     const onDisk = new Set(infos.map((info) => info.id));
     const summaries = new Map<string, SessionSummary>();
 
@@ -157,24 +163,24 @@ export class SessionRegistry {
         continue;
       }
       if (onDisk.has(id) || !live.hasUserMessage) continue;
-      summaries.set(id, this.liveOnlySummary(live));
+      const summary = this.liveOnlySummary(live);
+      if (wanted.has(workspaceKey(summary.cwd))) summaries.set(id, summary);
     }
 
-    const groups = new Map<string, SessionSummary[]>();
-    for (const summary of summaries.values()) {
-      const sessions = groups.get(summary.cwd);
-      if (sessions) sessions.push(summary);
-      else groups.set(summary.cwd, [summary]);
-    }
+    const groups = new Map<string, SessionSummary[]>(added.map((entry) => [entry.cwd, []]));
+    for (const summary of summaries.values()) groups.get(workspaceKey(summary.cwd))?.push(summary);
 
     const workspaces: Workspace[] = [];
     for (const [cwd, sessions] of groups) {
+      const entry = wanted.get(cwd)!;
       sessions.sort((a, b) => b.modified.localeCompare(a.modified));
       workspaces.push({
         cwd,
-        label: cwd === "" ? "(unknown)" : basename(cwd) || cwd,
+        label: basename(cwd) || cwd,
         sessions,
-        lastActive: sessions[0]?.modified ?? new Date(0).toISOString(),
+        // A freshly added folder sorts by when it was added.
+        lastActive: sessions[0]?.modified ?? entry.added,
+        ...(entry.archived ? { archived: true } : {}),
       });
     }
     workspaces.sort((a, b) => b.lastActive.localeCompare(a.lastActive));
@@ -246,6 +252,26 @@ export class SessionRegistry {
 
     await rm(path, { force: true });
     this.listCache = undefined;
+  }
+
+  /**
+   * Delete every session of a directory from disk (pi's own records, also used
+   * by the CLI). Refuses while one of them runs; returns how many were removed.
+   */
+  async deleteWorkspaceSessions(cwd: string): Promise<number> {
+    const key = workspaceKey(cwd);
+    const lives = this.liveSessions().filter((live) => workspaceKey(live.session.sessionManager.getCwd() || this.defaultCwd) === key);
+    if (lives.some((live) => live.isRunning)) throw new HttpError(409, "工作区里有会话正在运行，无法删除");
+
+    const paths = new Set((await this.listInfos(true)).filter((info) => workspaceKey(info.cwd) === key).map((info) => info.path));
+    for (const live of lives) {
+      if (live.session.sessionFile) paths.add(live.session.sessionFile);
+      this.live.delete(live.session.sessionId);
+      await live.dispose();
+    }
+    for (const path of paths) await rm(path, { force: true });
+    this.listCache = undefined;
+    return paths.size;
   }
 
   /** Dispose one live session (tests and explicit shutdowns). */

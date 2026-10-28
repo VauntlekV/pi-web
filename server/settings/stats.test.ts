@@ -2,6 +2,7 @@ import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import type { UsageStats } from "../../shared/protocol.ts";
+import { workspaceStore } from "../workspaces.ts";
 import { statsIo } from "./stats.ts";
 import { createSettingsHarness } from "./testing.ts";
 
@@ -11,8 +12,15 @@ const at = (daysAgo: number, hour: number, minute = 0): Date =>
 const localDay = (date: Date): string =>
   `${date.getFullYear()}-${`${date.getMonth() + 1}`.padStart(2, "0")}-${`${date.getDate()}`.padStart(2, "0")}`;
 
-function header(id: string, timestamp: Date): string {
-  return JSON.stringify({ type: "session", version: 3, id, timestamp: timestamp.toISOString(), cwd: "/tmp/work" });
+function header(id: string, timestamp: Date, cwd = "/tmp/work"): string {
+  return JSON.stringify({ type: "session", version: 3, id, timestamp: timestamp.toISOString(), cwd });
+}
+
+/** A settings harness whose pi-web lists /tmp/work (stats only count listed workspaces). */
+async function harnessWithWorkspace() {
+  const h = await createSettingsHarness();
+  await workspaceStore(h.agentDir).add("/tmp/work");
+  return h;
 }
 
 let counter = 0;
@@ -32,7 +40,7 @@ const assistant = (timestamp: Date, totalTokens: number, provider = "faux", mode
 
 describe("stats", () => {
   it("aggregates messages, tokens, active days, peak hour, models, and a 182-day chart", async () => {
-    const h = await createSettingsHarness();
+    const h = await harnessWithWorkspace();
     try {
       const today = at(0, 10);
       const yesterday = at(1, 15);
@@ -50,6 +58,9 @@ describe("stats", () => {
       const s2 = [header("s2", old), message(old, "user"), assistant(at(40, 9, 1), 10, "other", "m1")].join("\n");
       await writeFile(join(h.sessionDir, "s1.jsonl"), `${s1}\n`);
       await writeFile(join(h.sessionDir, "s2.jsonl"), `${s2}\n`);
+      // A session from a folder pi-web does not list is left out.
+      const elsewhere = [header("s3", today, "/tmp/elsewhere"), message(today, "user"), assistant(today, 999)].join("\n");
+      await writeFile(join(h.sessionDir, "s3.jsonl"), `${elsewhere}\n`);
 
       const all = await h.json<UsageStats>("/api/stats?range=all");
       expect(all.status).toBe(200);
@@ -86,7 +97,7 @@ describe("stats", () => {
   });
 
   it("does not read unchanged session files again on the next request", async () => {
-    const h = await createSettingsHarness();
+    const h = await harnessWithWorkspace();
     try {
       const today = at(0, 12);
       for (const [index, timestamp] of [today, at(1, 9)].entries()) {
@@ -114,7 +125,7 @@ describe("stats", () => {
   });
 
   it("defaults to all and rejects an unknown range", async () => {
-    const h = await createSettingsHarness();
+    const h = await harnessWithWorkspace();
     try {
       const empty = await h.json<UsageStats>("/api/stats");
       expect(empty.body).toMatchObject({

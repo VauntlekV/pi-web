@@ -33,15 +33,16 @@ import { readStorage, writeStorage } from "../app/storage.ts";
 import { setPrefs, usePrefs, type Prefs } from "../app/prefs.ts";
 import { openSettings } from "../app/ui-store.ts";
 import { Menu, type MenuEntry } from "../ui/menu.tsx";
+import { Button } from "../ui/button.tsx";
 import { ConfirmDialog } from "../ui/confirm.tsx";
+import { Modal } from "../ui/modal.tsx";
 import { toast } from "../ui/toasts.tsx";
 import { relativeTime } from "./time.ts";
 import {
-  filterByView,
   parseSidebarView,
   searchSessions,
   sessionTitle,
-  sortSessions,
+  visibleGroups,
   type SidebarView,
 } from "./view.ts";
 import "./sidebar.css";
@@ -107,6 +108,8 @@ export function Sidebar(props: SidebarProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<SessionSummary | null>(null);
+  const [workspaceTarget, setWorkspaceTarget] = useState<Workspace | null>(null);
+  const [workspaceBusy, setWorkspaceBusy] = useState(false);
   const [uiState, setUiState] = useState<UiState>({ pinned: [], archived: [] });
   const uiRef = useRef(uiState);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -229,6 +232,33 @@ export function Sidebar(props: SidebarProps) {
     }
   };
 
+  const setWorkspaceArchived = async (workspace: Workspace, archived: boolean) => {
+    try {
+      await api.archiveWorkspace(workspace.cwd, archived);
+      toast(archived ? `已归档「${workspace.label}」，可在视图选项 › 已归档里找回` : `已取消归档「${workspace.label}」`);
+      props.onRefresh();
+    } catch (error) {
+      toast(errorText(error), "error");
+    }
+  };
+
+  /** Deletes the workspace's session files too; the dialog says so and offers 归档 instead. */
+  const deleteWorkspace = async (workspace: Workspace) => {
+    setWorkspaceBusy(true);
+    try {
+      const { deleted } = await api.deleteWorkspace(workspace.cwd);
+      if (workspace.sessions.some((session) => session.id === currentSessionId)) navigate("/");
+      toast(deleted > 0 ? `已删除「${workspace.label}」及 ${deleted} 个会话记录` : `已移除「${workspace.label}」`);
+      setWorkspaceTarget(null);
+      props.onRefresh();
+    } catch (error) {
+      if (isStatus(error, 409)) toast("工作区里有会话正在运行，先停止它再删除", "warning");
+      else toast(errorText(error), "error");
+    } finally {
+      setWorkspaceBusy(false);
+    }
+  };
+
   const logout = async () => {
     try {
       await api.logout();
@@ -245,7 +275,8 @@ export function Sidebar(props: SidebarProps) {
   const pinned = uiState.pinned
     .map((id) => hits.find((hit) => hit.session.id === id))
     .filter((hit): hit is { session: SessionSummary; workspace: Workspace } => hit !== undefined)
-    .filter(({ session }) => uiState.archived.includes(session.id) === (view.show === "archived"));
+    // A session counts as archived when it or its workspace is.
+    .filter(({ session, workspace }) => (uiState.archived.includes(session.id) || Boolean(workspace.archived)) === (view.show === "archived"));
 
   const row = (session: SessionSummary, workspace: Workspace, showWorkspace: boolean) => {
     const active = session.id === currentSessionId;
@@ -409,6 +440,28 @@ export function Sidebar(props: SidebarProps) {
       icon: <Copy size={14} />,
       onSelect: () => void copyText(workspace.cwd, "已复制路径"),
     },
+    { kind: "separator" },
+    workspace.archived
+      ? {
+          kind: "item",
+          label: "取消归档",
+          icon: <ArchiveRestore size={14} />,
+          onSelect: () => void setWorkspaceArchived(workspace, false),
+        }
+      : {
+          kind: "item",
+          label: "归档工作区",
+          detail: "隐藏，保留记录",
+          icon: <Archive size={14} />,
+          onSelect: () => void setWorkspaceArchived(workspace, true),
+        },
+    {
+      kind: "item",
+      label: "删除工作区…",
+      icon: <Trash2 size={14} />,
+      danger: true,
+      onSelect: () => setWorkspaceTarget(workspace),
+    },
   ];
 
   return (
@@ -518,8 +571,7 @@ export function Sidebar(props: SidebarProps) {
             )}
 
             {!folded.has(SECTION_FOLD) &&
-              groups.map((workspace) => {
-                const sessions = sortSessions(filterByView(workspace.sessions, uiState.archived, view), view);
+              visibleGroups(groups, uiState.archived, view).map(({ workspace, sessions }) => {
                 const open = !folded.has(workspace.cwd);
                 return (
                   <section className={open ? "sb-group" : "sb-group is-folded"} key={workspace.cwd}>
@@ -536,6 +588,7 @@ export function Sidebar(props: SidebarProps) {
                           <ChevronRight size={14} className="sb-fold-chevron" />
                         </span>
                         <span className="sb-group-title">{workspace.label}</span>
+                        {workspace.archived && <span className="sb-group-count">已归档</span>}
                         {!open && sessions.length > 0 && <span className="sb-group-count">{sessions.length}</span>}
                       </button>
                       <span className="sb-group-actions">
@@ -561,7 +614,15 @@ export function Sidebar(props: SidebarProps) {
                 );
               })}
 
-            {workspaces.length === 0 && <p className="sb-empty">还没有工作区</p>}
+            {workspaces.length === 0 && (
+              <div className="sb-empty sb-empty-workspaces">
+                <p>还没有工作区。pi-web 只显示你添加的文件夹里的会话。</p>
+                <button type="button" className="sb-empty-add" onClick={props.onPickCwd}>
+                  <FolderPlus size={14} aria-hidden="true" />
+                  添加工作区
+                </button>
+              </div>
+            )}
           </>
         )}
       </div>
@@ -584,6 +645,50 @@ export function Sidebar(props: SidebarProps) {
           items={accountMenu}
         />
       </div>
+
+      {workspaceTarget && (
+        <Modal
+          title={`删除工作区「${workspaceTarget.label}」？`}
+          onClose={() => !workspaceBusy && setWorkspaceTarget(null)}
+          footer={
+            <>
+              <Button disabled={workspaceBusy} onClick={() => setWorkspaceTarget(null)}>
+                取消
+              </Button>
+              {!workspaceTarget.archived && (
+                <Button
+                  disabled={workspaceBusy}
+                  onClick={() => {
+                    const target = workspaceTarget;
+                    setWorkspaceTarget(null);
+                    void setWorkspaceArchived(target, true);
+                  }}
+                >
+                  改为归档
+                </Button>
+              )}
+              <Button variant="danger" disabled={workspaceBusy} onClick={() => void deleteWorkspace(workspaceTarget)}>
+                {workspaceTarget.sessions.length > 0 ? `删除 ${workspaceTarget.sessions.length} 个会话记录` : "删除"}
+              </Button>
+            </>
+          }
+        >
+          <div className="sb-delete-ws">
+            <code title={workspaceTarget.cwd}>{workspaceTarget.cwd}</code>
+            {workspaceTarget.sessions.length > 0 ? (
+              <>
+                <p>
+                  删除工作区会<strong>永久删除</strong>它的 {workspaceTarget.sessions.length} 个会话记录（~/.pi/agent/sessions 里的文件），
+                  pi CLI 里也无法再打开，且不能恢复。文件夹本身和其中的代码不受影响。
+                </p>
+                <p>只想从侧栏隐藏的话，请选择「改为归档」：记录会保留，可以在 视图选项 › 已归档 里找回。</p>
+              </>
+            ) : (
+              <p>这个工作区还没有会话记录，删除只会把它从列表中移除，文件夹本身不受影响。</p>
+            )}
+          </div>
+        </Modal>
+      )}
 
       <ConfirmDialog
         open={deleteTarget !== null}

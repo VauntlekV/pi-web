@@ -16,7 +16,7 @@ import { SettingsModal } from "./settings/index.tsx";
 import { Sidebar } from "./sidebar/index.tsx";
 import { Button } from "./ui/button.tsx";
 import { Splitter } from "./ui/splitter.tsx";
-import { Toasts } from "./ui/toasts.tsx";
+import { toast, Toasts } from "./ui/toasts.tsx";
 import "./app/app.css";
 
 const SIDEBAR_KEY = "pi-web-sidebar";
@@ -349,8 +349,14 @@ export function App() {
             }}
             onPickCwd={() =>
               openPicker((path) => {
-                setHomeCwd(path);
-                navigate("/");
+                void api
+                  .addWorkspace(path)
+                  .then((data) => {
+                    setBoot((current) => (current.status === "ready" ? { ...current, workspaces: data.workspaces } : current));
+                    setHomeCwd(path);
+                    navigate("/");
+                  })
+                  .catch((error: unknown) => toast(errorText(error), "error"));
               })
             }
             onOpenWorkspaceFiles={openWorkspaceFiles}

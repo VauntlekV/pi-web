@@ -212,6 +212,65 @@
   text-align: center;
 }
 
+.sb-empty-workspaces {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  line-height: 1.6;
+}
+
+.sb-empty-workspaces p {
+  margin: 0;
+}
+
+.sb-empty-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  border: 1px dashed var(--border-2);
+  border-radius: var(--radius-md);
+  color: var(--ink-2);
+  font-size: var(--text-sm);
+}
+
+.sb-empty-add:hover {
+  background: var(--hover-wash);
+  color: var(--ink);
+}
+
+.sb-delete-ws {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  color: var(--ink-2);
+  font-size: var(--text-sm);
+  line-height: 1.6;
+}
+
+.sb-delete-ws p {
+  margin: 0;
+}
+
+.sb-delete-ws strong {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.sb-delete-ws code {
+  overflow: hidden;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--inset);
+  color: var(--ink-3);
+  font-family: var(--font-code);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .sb-group + .sb-group {
   margin-top: 6px;
 }
